@@ -37,8 +37,14 @@ RNA-Seq (bulk) were qc'ed, trimmed and aligned to the nemVec2 genome using STAR.
 - (FASTA_QC?) are all reads okay - demultiplexing?   
 - Read Trimming? (are all adapters cut)   
 - Alignment --> [input: FASTQ]; output in SAM/BAM format   
-- Variant calling (**bcftools**)
+- Variant calling (**bcftools**)   
 
+## bcftools:
+bcftools mpileup -f reference.fa alignments.bam | bcftools call -mv -Ob -o calls.bcf   
+
+[/scratch/kreitzer]: bcftools mpileup -f /scratch/jmontenegro/nvectensis/data/refs/nv_dovetail_4_gapped_chroms.final.fasta  /proj/ferrer/rna_seq_twist/X204SC20120808-Z01-F001/raw_data/results/map/[...Aligned.bam] | bcftools call -mv -Ob -o calls.test.bcf  
+
+--> default parameters:
 
 
 
