@@ -17,8 +17,7 @@ Twi4d (twist mutant 4dpf)
 WT4d (WT 4dpf)     
 All were done as triplicates and have the suffix 1,2,3 added to their name depending on the replicate   
 
-For the resequenced libraries the have the RS suffix added to them.  
-The resequenced libraries are:   
+For the resequenced libraries the have the RS suffix added to them.   
 Bubble 1,2 & 3   
 Twihead 2  
 WTHead 1 & 2  
