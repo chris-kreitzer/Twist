@@ -31,20 +31,14 @@ Twi4d vs WT
 ## Background:
 RNA-Seq (bulk) were qc'ed, trimmed and aligned to the nemVec2 genome using STAR. STAR is currently the best INTRON-aware aligner;
 
-## First issues: 04/26/2021  
-- Sequencing  
-- BCL (sequencing) **raw** to FASTQ conversion  
-- (FASTA_QC?) are all reads okay - demultiplexing?   
-- Read Trimming? (are all adapters cut)   
-- Alignment --> [input: FASTQ]; output in SAM/BAM format   
-- Variant calling (**bcftools**)   
 
-## bcftools:
+## First issues: 04/26/2021  
+### bcftools [default seetings]:
 bcftools mpileup -f reference.fa alignments.bam | bcftools call -mv -Ob -o calls.bcf   
 
 [/scratch/kreitzer]: bcftools mpileup -f /scratch/jmontenegro/nvectensis/data/refs/nv_dovetail_4_gapped_chroms.final.fasta  /proj/ferrer/rna_seq_twist/X204SC20120808-Z01-F001/raw_data/results/map/[...Aligned.bam] | bcftools call -mv -Ob -o calls.test.bcf  
 
---> default parameters:
+one working example on /scratch/
 
 
 
