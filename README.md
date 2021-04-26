@@ -42,6 +42,7 @@ one working example on /scratch/
 
 
 
-## Generals:
+## Generals:  
+https://wiki.csb.univie.ac.at/doku.php?id=content:working_environment:services:slurm_workload_manager
 Working is intented to take place on /scratch
 Processing and analysis should be conducted there. Once pipeline is through (/scratch/) ~ move data to **/proj/**
