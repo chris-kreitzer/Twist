@@ -26,7 +26,15 @@ Bubble vs WT
 Twihead vs WT  
 Twi4d vs WT    
 
-## First issues: 
+## First issues: 04/26/2021  
+- Sequencing  
+- BCL (sequencing) **raw** to FASTQ conversion  
+- (FASTA_QC?) are all reads okay - demultiplexing?   
+- Read Trimming? (are all adapters cut)   
+- Alignment --> [input: FASTQ]; output in SAM/BAM format   
+- Variant calling (**bcftools**)
+
+
 
 
 ## Generals:
