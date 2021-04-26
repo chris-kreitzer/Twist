@@ -5,8 +5,8 @@
 - **reference genome Nv:** /scratch/jmontenegro/nvectensis/data/refs/nv_dovetail_4_gapped_chroms.final.fasta.gz  
 - **functional annotation NV:** /scratch/jmontenegro/nvectensis/data/orthologs/orth.table.tsv (gene predicted with corresponding functional annotation; alike BLAST query)   
 - **twist RNA-seq data (bulk RNA Seq):** /proj/ferrer/rna_seq_twist   
--  /proj/ferrer/rna_seq_twist/X204SC20120808-Z01-F001/raw_data/results/map [FASTQ format]; first time
--  /proj/ferrer/rna_seq_twist/resequence/X204SC20120808-Z01-F004/raw_data/results/map [FASTQ format]; (re-sequenced samples)   
+-  /proj/ferrer/rna_seq_twist/X204SC20120808-Z01-F001/raw_data/results/map [trimmed; aligned and sorted .bam files]; 
+-  /proj/ferrer/rna_seq_twist/resequence/X204SC20120808-Z01-F004/raw_data/results/map [re-sequenced samples]; 
  
 - sample annotation for .bam files:   
 
