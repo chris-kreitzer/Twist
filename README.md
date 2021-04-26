@@ -6,10 +6,9 @@
 - **functional annotation NV:** /scratch/jmontenegro/nvectensis/data/orthologs/orth.table.tsv (gene predicted with corresponding functional annotation; alike BLAST query)   
 - **twist RNA-seq data (bulk RNA Seq):** /proj/ferrer/rna_seq_twist   
 -  /proj/ferrer/rna_seq_twist/X204SC20120808-Z01-F001/raw_data/results/map **[trimmed; aligned and sorted .bam files];** 
--  /proj/ferrer/rna_seq_twist/resequence/X204SC20120808-Z01-F004/raw_data/results/map **[re-sequenced samples];** 
- 
-- sample annotation for .bam files:   
+-  /proj/ferrer/rna_seq_twist/resequence/X204SC20120808-Z01-F004/raw_data/results/map **[re-sequenced samples];**  
 
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Bubble (twist mutant with phenotype)  
 TwiHead (twist mutant without phenotype)  
 WTHead (as the name says)  
@@ -27,6 +26,9 @@ Bubble vs TwiHead
 Bubble vs WT  
 Twihead vs WT  
 Twi4d vs WT    
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+## Background:
+RNA-Seq (bulk) were qc'ed, trimmed and aligned to the nemVec2 genome using STAR. STAR is currently the best INTRON-aware aligner;
 
 ## First issues: 04/26/2021  
 - Sequencing  
