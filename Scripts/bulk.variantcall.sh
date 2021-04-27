@@ -20,7 +20,7 @@ ref="/scratch/jmontenegro/nvectensis/data/refs/nv_dovetail_4_gapped_chroms.final
 # Execution:
 echo "Started at `date`"
 
-for i in $AlignedSamples;
+for i in ${AlignedSamples[@]};
 do
 	name=$(basename $i)
 	bcftools mpileup -f ${ref} $i | bcftools call -mv -Ob -o echo "/scratch/kreitzer/$name.bcf"
