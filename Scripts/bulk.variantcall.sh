@@ -22,8 +22,9 @@ echo "Started at `date`"
 
 for i in ${AlignedSamples[@]};
 do
-	name=$(basename $i)
-	bcftools mpileup -f ${ref} $i | bcftools call -mv -Ob -o "/scratch/kreitzer/$name.bcf"
+	name=$(basename $i)  \
+	bcftools mpileup -f ${ref} $i | bcftools call -mv -Ob -o "/scratch/kreitzer/$name.bcf"  \
+done
 
 echo "Finished at `date`"
 
