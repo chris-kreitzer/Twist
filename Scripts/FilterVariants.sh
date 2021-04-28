@@ -18,4 +18,4 @@ bcftools view *_bcf > _vcf
 bcftools +fill-tags file.vcf  -- -t AF > output.vcf
 
 # third: filter use bcftools query to filter variants with <= 0.2 AF
-
+bcftools query -i'INFO/AF>0.2' -f '%POS %REF %ALT %INFO\n' file.bcf
