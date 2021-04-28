@@ -24,10 +24,18 @@ base=`basename ${bam}`
 # Processing:
 echo "Started at `date`"
 
+<<<<<<< HEAD:Scripts/VariantCalling.sh
 echo "bcftools mpileup -f ${ref} ${bam} | bcftools call -mv -Ob -o ${wd}_bcf"
 
 bcftools mpileup -f ${ref} ${bam} | bcftools call -mv -Ob -o ${wd}_bcf
 
+=======
+for i in ${AlignedSamples[@]};
+do
+	name=$(basename $i)  \
+	bcftools mpileup -f ${ref} $i | bcftools call -mv -Ob -o "/scratch/kreitzer/$name.bcf"  \
+done
+>>>>>>> 1c8706fcc9e20ccb58ce11485820cb0962c57557:Scripts/bulk.variantcall.sh
 
 echo "Finished at `date`"
 
