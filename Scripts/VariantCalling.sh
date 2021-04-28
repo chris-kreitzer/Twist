@@ -10,22 +10,24 @@
 # Setup:
 module load bcftools
 
-
+# Environment
 wd="/scratch/kreitzer/"
-projfolder="/proj/ferrer/rna_seq_twist/X204SC20120808-Z01-F001/raw_data/results/map/"
-AlignedSamples=$(find ${projfolder} -type f -iname "Aligned.sortedByCoord.out.bam")
-
 ref="/scratch/jmontenegro/nvectensis/data/refs/nv_dovetail_4_gapped_chroms.final.fasta"
+projfolder="/proj/ferrer/rna_seq_twist/X204SC20120808-Z01-F001/raw_data/results/map"
 
-# Execution:
+# Variables
+echo "RUN = $RUN"
+reads=( ${projfolder}/*.out.bam )
+bam="${reads[$RUN]}"
+base=`basename ${bam}`
+
+# Processing:
 echo "Started at `date`"
 
-for i in $AlignedSamples;
-do
-	name=$(basename $i)
-	bcftools mpileup -f ${ref} $i | bcftools call -mv -Ob -o echo "/scratch/kreitzer/$name.bcf"
+echo "bcftools mpileup -f ${ref} ${bam} | bcftools call -mv -Ob -o ${wd}_bcf"
+
+bcftools mpileup -f ${ref} ${bam} | bcftools call -mv -Ob -o ${wd}_bcf
+
 
 echo "Finished at `date`"
 
-## running with default parameters
-## out: 04/27/2021
