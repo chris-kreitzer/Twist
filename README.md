@@ -29,8 +29,9 @@ Twi4d vs WT
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 ## Background:
-RNA-Seq (bulk) were qc'ed, trimmed and aligned to the nemVec2 genome using STAR. STAR is currently the best INTRON-aware aligner;
+**RNA-Seq** (bulk) were qc'ed, trimmed and aligned to the nemVec2 genome using STAR. STAR is currently the best INTRON-aware aligner;
 
+**twist**; *Nv2.10864*; chr2: 2,358,626 - 2,359,015 (gene coordinates and location: 389 bp long); [mRNA](https://simrbase.stowers.org/feature/Nematostella/vectensis/mRNA/NVEC200_000161_1.1)
 
 ## First issues: 04/26/2021  
 ### bcftools [default seetings]:
