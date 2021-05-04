@@ -13,3 +13,5 @@ grep 'NV2.10864' <search.file.vcf>
 # making symbolic link to data repository
 ln -s /proj/ferrer/rna[...] <destinationfolder>
 
+awk -F '$3==exon' input > output
+
