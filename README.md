@@ -29,7 +29,10 @@ Twi4d vs WT
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 ## Background:
-**RNA-Seq** (bulk) were qc'ed, trimmed and aligned to the nemVec2 genome using STAR. STAR is currently the best INTRON-aware aligner;
+**RNA-Seq** (bulk) were qc'ed, trimmed and aligned to the nemVec2 genome using STAR. STAR is currently the best INTRON-aware aligner;  
+We are specifically interested in variants in the bulk-RNA data, as single-cell data can't be used to find off-targets. We are using the RNA-bulk data as a sanity check for the single-cell data. Biological material for both sequencing strategies (bulk, single-cell) comes from the same animals!  
+We are running bcftools mpileup population-wise (meaning all 15 samples together) and loop through chromosomes. Because we are running bcftools population-wise we can calculate proper AF values. The amount of alternative alleles (within 15 samples) divided by reference (amount). AF < 0.2 are discared.  
+We then move on to find intersects (**bedtools**); we concentrate just on tcs_exon_gtf - as we only want to see variants on exons (likely functional effect); biological effects of intronic variants are hard to predict!   
 
 **twist**; *Nv2.10864*; chr2: 2,358,626 - 2,359,015 (gene coordinates and location: 389 bp long); [mRNA](https://simrbase.stowers.org/feature/Nematostella/vectensis/mRNA/NVEC200_000161_1.1)
 
@@ -39,9 +42,7 @@ bcftools mpileup -f reference.fa alignments.bam | bcftools call -mv -Ob -o calls
 
 [/scratch/kreitzer]: bcftools mpileup -f /scratch/jmontenegro/nvectensis/data/refs/nv_dovetail_4_gapped_chroms.final.fasta  /proj/ferrer/rna_seq_twist/X204SC20120808-Z01-F001/raw_data/results/map/[...Aligned.bam] | bcftools call -mv -Ob -o calls.test.bcf  
 
-one working example on /scratch/
-
-
+one working example on /scratch/  
 
 ## Generals:  
 https://wiki.csb.univie.ac.at/doku.php?id=content:working_environment:services:slurm_workload_manager   
