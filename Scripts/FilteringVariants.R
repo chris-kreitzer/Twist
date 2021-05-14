@@ -24,7 +24,7 @@ chr2 = read.csv('Data_out/chr2_filtered_intersected.txt', sep = '\t', header = F
 
 ## Processing
 FilterVariants = function(data.in){
-  columns.keep = c('Chromosome', 'Position', 'ref', 'alt', 'INS', 'DEL', 'delta', 'het', 'keep')
+  columns.keep = c('Chromosome', 'Position', 'ref', 'alt', 'INS', 'DEL', 'delta', 'het', 'keep', 'Annotation', 'gene_id')
   data.in = as.data.frame(data.in)
   colnames(data.in)[1:5] = c('Chromosome', 'Position', 'ID', 'ref', 'alt')
   annotation = grep('gene_id*', data.in)
@@ -51,6 +51,14 @@ FilterVariants = function(data.in){
   
   data.single[c(ii.mismatch, ii.match), 'filter'] = 'keep'
   
+  data.single$repeatsREF = NA
+  data.single$repeatsALT = NA
+  for(i in 1:nrow(data.single)){
+    data.single$repeatsREF[i] = sum(!!str_count(data.single$ref[i], LETTERS))
+    data.single$repeatsALT[i] = sum(!!str_count(data.single$alt[i], LETTERS))
+  }
+  
+  
   # filter variants where more than 2 samples are heterozygous or non-genotyped;
   start.samples = grep('GT:PL', data.single) + 1
   end.samples = start.samples + 15
@@ -63,7 +71,13 @@ FilterVariants = function(data.in){
   data.single$het = apply(data.single[seq(start.samples, end.samples, 1)], 1, function(x) length(which(x == '0/1')))
   
   data.single$keep = ifelse(is.na(data.single$filter), 'discard',
-                            ifelse(data.single$filter == 'keep' & data.single$het > 2, 'discard', 'keep'))
+                            ifelse(data.single$filter == 'keep' & data.single$het > 2, 'discard', 
+                                   ifelse(data.single$repeatsREF < 3, 'discard', 'keep')))
+  
+  data.single$gene_id = as.character(lapply(strsplit(as.character(data.single$Annotation), split = ';'), 
+                                            head, n = 1))
+  
+  data.single = data.single[!duplicated(data.single[,c('Position', 'gene_id')]), ]
   
   data.single = data.single[, colnames(data.single) %in% columns.keep]
   
@@ -103,6 +117,12 @@ FilterVariants = function(data.in){
                                                       nchar(data.multipe.genotypes[i, c(grep(pattern = 'Genotype*', x = colnames(data.multipe.genotypes)))])), na.rm = T)
   }
   
+  data.multipe.genotypes$repeatsREF = NA
+  for(i in 1:nrow(data.multipe.genotypes)){
+    data.multipe.genotypes$repeatsREF[i] = sum(!!str_count(data.multipe.genotypes$ref[i], LETTERS))
+  }
+  
+  
   ## filter variants where more than 2 samples are heterozygous or non-genotyped
   start.samples = grep('GT:PL', data.multipe.genotypes) + 1
   end.samples = start.samples + 15
@@ -114,23 +134,34 @@ FilterVariants = function(data.in){
   data.multipe.genotypes$het = NA
   data.multipe.genotypes$het = apply(data.multipe.genotypes[seq(start.samples, end.samples, 1)], 1, function(x) length(which(x == '0/1')))
   
-  data.multipe.genotypes$keep = ifelse(data.multipe.genotypes$delta > 3 & data.multipe.genotypes$het < 3, 'keep', 'discard')
+  data.multipe.genotypes$keep = ifelse(data.multipe.genotypes$delta > 3 & 
+                                         data.multipe.genotypes$het < 3 & 
+                                         data.multipe.genotypes$repeatsREF > 2, 'keep', 'discard')
+  
+  data.multipe.genotypes$gene_id = as.character(lapply(strsplit(as.character(data.multipe.genotypes$Annotation), split = ';'), 
+                                            head, n = 1))
+  
+  data.multipe.genotypes = data.multipe.genotypes[!duplicated(data.multipe.genotypes[,c('Position', 'gene_id')]), ]
   
   data.multipe.genotypes = data.multipe.genotypes[, colnames(data.multipe.genotypes) %in% columns.keep]
+  
   
   # combined output
   Variants_out = rbind(data.single, data.multipe.genotypes)
   Variants_keep = Variants_out[which(Variants_out$keep == 'keep'), ]
   
-  Variants_annotated = merge(Variants_keep, data.in[, c('Position', 'Annotation')],
-                             by.x = 'Position', by.y = 'Position', all.x = T)
+  # attach the respective genotypes
+  Variants_annotated = merge(Variants_keep, data.in,
+                             by.x = c('Position'), by.y = c('Position'), all.x = T)
+  Variants_annotated = Variants_annotated[!duplicated(Variants_annotated[,c('Position', 'gene_id')]), ]
   
-  Variants_annotated = unique(Variants_annotated)
-  
-  return(Variants_annotated)
+  return(list(Variants = Variants_keep,
+              Variants_GT = Variants_annotated))
   
 }
 
-x = FilterVariants(data.in = chr2)
 
-write.table(x, file = 'Data_out/Filtered_Annotated_Variants_chr2.xlsx', sep = '\t', row.names = F)
+
+x = FilterVariants(data.in = chr2)
+write.table(x$Variants, file = 'Data_out/Filtered_Annotated_Variants_chr2.xlsx', sep = '\t', row.names = F, quote = F)
+write.table(x$Variants_GT, file = 'Data_out/Filtered_Annotated_Variants_chr2_Genotype.xlsx', sep = '\t', row.names = F, quote = F)
