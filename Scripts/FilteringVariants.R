@@ -2,8 +2,11 @@
 ## Pre-defined filtering steps, where we believe that variants will not effect protein function
 ## Concentrate on unique and multipe alternative genoypes respectively
 ## Filtering rules, as commented below;
+## 
+## added segregation pattern of variants within population
 ##
 ## Start: 05/11/2021:
+## Revised: 05/18/2021:
 ## Chris Kreitzer
 
 
@@ -146,22 +149,64 @@ FilterVariants = function(data.in){
   data.multipe.genotypes = data.multipe.genotypes[, colnames(data.multipe.genotypes) %in% columns.keep]
   
   
-  # combined output
+  #' combined output
   Variants_out = rbind(data.single, data.multipe.genotypes)
   Variants_keep = Variants_out[which(Variants_out$keep == 'keep'), ]
   
-  # attach the respective genotypes
+  #' attach the respective genotypes
   Variants_annotated = merge(Variants_keep, data.in,
                              by.x = c('Position'), by.y = c('Position'), all.x = T)
   Variants_annotated = Variants_annotated[!duplicated(Variants_annotated[,c('Position', 'gene_id')]), ]
   
+  #' annotate genotypes
+  mutants = c('Bubble1', 'Bubble2', 'Bubble3', 'Twist4d_1', 'Twist4d_2', 'Twist4d_3', 'Twisthead_1', 'Twisthead_2', 'Twisthead_3')
+  wildtype = c('WT4d_1', 'WT4d_2', 'WT4d_3', 'WThead_1', 'WThead_2', 'WThead_3')
+  start.column = grep(pattern = 'GT:PL', Variants_annotated) + 1
+  colnames(Variants_annotated)[seq(start.column, start.column + 8, by = 1)] = paste0(mutants, '_mut')
+  colnames(Variants_annotated)[seq(start.column + 9, start.column + 14, by = 1)] = paste0(wildtype, '_wt')
+  
+  
+  #' determine segregation pattern of variants
+  mutant_variants = data.frame()
+  wt_variants = data.frame()
+  
+  muts = grep(pattern = '*_mut', x = colnames(Variants_annotated))
+  wts = grep(pattern = '*_wt', x = colnames(Variants_annotated))
+  
+  for(i in 1:nrow(Variants_annotated)){
+    ii.muts.dom = grep(pattern = '1/1*', x = Variants_annotated[i, muts])
+    ii.muts.rec = grep(pattern = '0/0*', x = Variants_annotated[i, muts])
+    
+    ii.wt.dom = grep(pattern = '1/1*', x = Variants_annotated[i, wts])
+    ii.wt.rec = grep(pattern = '0/0*', x = Variants_annotated[i, wts])
+    
+    #' selection criteria
+    if(length(ii.muts.dom) == 9 & length(ii.wt.rec) == 6){
+      mut.dominant = Variants_annotated[i, ]
+      mutant_variants = rbind(mutant_variants, mut.dominant)
+    } else if (length(ii.muts.rec) == 9 & length(ii.wt.dom) == 6) {
+      wt.dominant = Variants_annotated[i, ]
+      wt_variants = rbind(wt_variants, wt.dominant)
+    }
+    
+  }
+  
+  #' output
+  mutant_variants = unique(mutant_variants)
+  mutant_variants = mutant_variants[!duplicated(mutant_variants$Position), ]
+  wt_variants = unique(wt_variants)
+  wt_variants = wt_variants[!duplicated(wt_variants$Position), ]
+  
   return(list(Variants = Variants_keep,
-              Variants_GT = Variants_annotated))
+              Variants_GT = Variants_annotated,
+              mutant_variants = mutant_variants,
+              wt_variants = wt_variants))
   
 }
 
-
-
 x = FilterVariants(data.in = chr2)
-write.table(x$Variants, file = 'Data_out/Filtered_Annotated_Variants_chr2.xlsx', sep = '\t', row.names = F, quote = F)
+
+#' write files to local disk
 write.table(x$Variants_GT, file = 'Data_out/Filtered_Annotated_Variants_chr2_Genotype.xlsx', sep = '\t', row.names = F, quote = F)
+write.table(x$mutant_variants, file = 'Data_out/Filtered_Annotated_Variants_chr2_Genotype_MUTANT.specific.xlsx', sep = '\t', row.names = F, quote = F)
+write.table(x$wt_variants, file = 'Data_out/Filtered_Annotated_Variants_chr2_Genotype_WT.specific.xlsx', sep = '\t', row.names = F, quote = F)
