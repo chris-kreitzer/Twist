@@ -28,6 +28,24 @@ Twihead vs WT
 Twi4d vs WT    
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+## First summary about the CRISPR-Cas9 Off-targets approach:   
+From the bulk-RNA Seq we observed 4 variants which are mutant-specific. We exclusively concentrated on INDELs (because they are most likely to produce truncating proteins). We run the pipeline chromosome-wise, meaning that we get population estimates from the input samples (sum 15). After annotation and filtering, we have a list of 4 INDEL variants which are of particular interest (present in all 9 mutant bulk-RNA samples, and missing in the remaining 6 wildtype samples).   
+- chr2:1059227	CCCCGAAC	CC	gene_id NV2.10722; transcript_id NV2.10722.1; exon_number 1; this particular variant has a **delta bp of 6**, meaning that 2 AS are not produced (missing), however we still do assume that a protein is produced (perhaps altered function).  
+- chr2:2358816	GGTAACGT	GGT	gene_id NV2.10864; transcript_id NV2.10864.1; exon_number 1; this is actually **twist** mutation. We see a **5bp** deletion in all the mutants; since this is an odd number to 6, we assume that this causes a true ***frameshift mutation***, most likely that a pre-mature stop codon is introduced and hence the protein function is disabled completely.  
+- chr2:3292703	CTTCCATTT	CTTT	gene_id NV2.10979; transcript_id NV2.10979.1; exon_number 2; Orthologe: ***LOC100177304 [Ciona intestinalis]***, RSPH1_MOUSE Radial spoke head 1 homolog; RSPH1 Radial spoke head 1 homolog; this particular gene is affected and MUST be considered in further analysis. As there is a **5 bps deletion** we equally assume that this variant causes a pre-mature stop-codon, and hence the protein function might be disabled.   
+- chr8:15289229	CTGTGTGTGTGTGTGTGTGTGT	CTGTGTGTGTGTGTGT|CTGTGTGTGTGTGTGTGTGT	gene_id NV2.24244; transcript_id NV2.24244.1; exon_number 19; **ditto** as for first variant described in this list -- no particular effect apart from altered protein function;  
+
+Moreover, I discovered **5 variants** which are unique to the wild-type samples (e.g. TwiHead, WT4d, etc.) and are missing in the CRISPR-mutants. Meaning that those variants acquired the mutation 'naturally' (*de novo*), and CRISPR doesn't effect those genes in the mutants. As we are not particularly interested in those, we are not concentrating on this oberservation for this project.   
+
+From this point of view, we will consider NV2.10979 and obviously *twist* in the scRNA data. The questions we want to address are: 
+- are those genes expressed in the scRNA data (sanity check);
+- if they are expressed, in which cluster are they expressed;
+- how is the expression changing - different from wild-types to mutants;   
+
+
+Before, I move on to scRNA libraries (data), I will define a GOI - differentially expressed in the mutants and wild-types. This set of genes should serve as a sanity check, whether we see the same pattern in scRNA data. 
+
+
 ## Background:
 **RNA-Seq** (bulk) were qc'ed, trimmed and aligned to the nemVec2 genome using STAR. STAR is currently the best INTRON-aware aligner;  
 We are specifically interested in variants in the bulk-RNA data, as single-cell data can't be used to find off-targets. We are using the RNA-bulk data as a sanity check for the single-cell data. Biological material for both sequencing strategies (bulk, single-cell) comes from the same animals!  
