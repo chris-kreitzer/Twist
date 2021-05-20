@@ -21,6 +21,8 @@ rm(list = ls())
 library("DESeq2")
 library(ggplot2)
 library(dplyr)
+library("pheatmap")
+library("RColorBrewer")
 
 ## Input and Processing
 bulkRNA_in = read.csv(file = 'Data_out/bulkRNAcounts_featureCounts', 
@@ -28,10 +30,12 @@ bulkRNA_in = read.csv(file = 'Data_out/bulkRNAcounts_featureCounts',
                       sep = '\t')
 row.names(bulkRNA_in) = bulkRNA_in$Geneid
 bulkRNA_in = bulkRNA_in[, seq(7, ncol(bulkRNA_in), 1)]
+colnames(bulkRNA_in) = c('Bubble1', 'Bubble2', 'Bubble3', 'Twi4d_1', 'Twi4d_2', 'Twi4d_3', 'Twihead_1', 'Twihead_2', 'Twihead_3', 
+                         'WT4d_1', 'WT4d_2', 'WT4d_3', 'WThead_1', 'WThead_2', 'WThead_3')
 
 # set condition for DESeq2 analysis (sample basis)
-sampleRNA = factor(c('Bubble1', 'Bubble2', 'Bubble3', 'Twi4d_1', 'Twi4d_2', 'Twi4d_3', 'Twihead_1', 'Twihead_2',
-              'Twihead_3', 'WT4d_1', 'WT4d_2', 'WT4d_3', 'WThead_1', 'WThead_2', 'WThead_3'))
+sampleRNA = factor(c('Bubble1', 'Bubble2', 'Bubble3', 'Twi4d_1', 'Twi4d_2', 'Twi4d_3', 'Twihead_1', 'Twihead_2', 'Twihead_3', 
+                     'WT4d_1', 'WT4d_2', 'WT4d_3', 'WThead_1', 'WThead_2', 'WThead_3'))
 
 condition = factor(c('mut', 'mut', 'mut', 'mut', 'mut', 'mut', 
                      'mut', 'mut', 'mut', 'wt','wt', 'wt', 
@@ -82,6 +86,60 @@ VST_bulkRNA.plot
 
 
 #' Sample distances: how similar are samples 
+sampleDist = dist(t(assay(vsd_bulkRNA)))
+
+sampleDistMatrix = as.matrix(sampleDist)
+rownames(sampleDistMatrix) = paste(vsd_bulkRNA$sampleRNA, vsd_bulkRNA$condition, sep = " - " )
+colnames(sampleDistMatrix) = NULL
+colors = colorRampPalette(rev(brewer.pal(9, "Blues")) )(255)
+
+pheatmap(sampleDistMatrix,
+         clustering_distance_rows = sampleDist,
+         clustering_distance_cols = sampleDist,
+         col = colors)
+
+
+## PCA: sample to sample distance:
+plotPCA(vsd_bulkRNA, intgroup = c("condition"))
+plotPCA(vsd_bulkRNA, intgroup = c("sampleRNA", 'condition'))
+
+#' return the rawData
+PCA_raw = plotPCA(vsd_bulkRNA, intgroup = c( "sampleRNA", "condition"), returnData = TRUE)
+ggplot(PCA_raw, 
+       aes(x = PC1, y = PC2, 
+           color = sampleRNA, 
+           shape = condition)) +
+  geom_point(size =3) +
+  coord_fixed() +
+  scale_color_manual(values = c('Bubble1' = 'red',
+                                'Bubble2' = 'red',
+                                'Bubble3' = 'red',
+                                'Twi4d_1' = 'blue',
+                                'Twi4d_2' = 'blue',
+                                'Twi4d_3' = 'blue',
+                                'Twihead_1' = 'aquamarine3',
+                                'Twihead_2' = 'aquamarine3',
+                                'Twihead_3' = 'aquamarine3',
+                                'WT4d_1' = 'brown',
+                                'WT4d_2' = 'brown',
+                                'WT4d_3' = 'brown',
+                                'WThead_1' = 'orange',
+                                'WThead_2' = 'orange',
+                                'WThead_3' = 'orange')) +
+  ggtitle("PCA with variance-stabilized transformed data")
+
+
+##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+## Differential gene expression: 
+DGE_bulkRNA = DESeq(bulkRNA_object)
+DGE_out = results(DGE_bulkRNA)
+
+
+
+
+
+
+
 
 
 
