@@ -19,8 +19,8 @@ rm(list = ls())
 # 
 # BiocManager::install("DESeq2", force = T)
 library("DESeq2")
-
-
+library(ggplot2)
+library(dplyr)
 
 ## Input and Processing
 bulkRNA_in = read.csv(file = 'Data_out/bulkRNAcounts_featureCounts', 
@@ -38,7 +38,7 @@ condition = factor(c('mut', 'mut', 'mut', 'mut', 'mut', 'mut',
                      'wt', 'wt', 'wt'))
 
 # creating DESeq2 object:
-bulkRNA_object = DESeqDataSetFromMatrix(countData = bulkRNA_in, 
+bulkRNA_raw = DESeqDataSetFromMatrix(countData = bulkRNA_in, 
                                     colData = DataFrame(sampleRNA, condition),
                                     design = sampleRNA ~ condition)
 
@@ -46,9 +46,9 @@ bulkRNA_object = DESeqDataSetFromMatrix(countData = bulkRNA_in,
 ## DESeq2 WORKFLOW:
 #' Pre-filtering the dataset:
 #' remove rows with 0's: NO COUNTS OR just single counts across all samples
-nrow(bulkRNA_object)
-keep = rowSums(counts(bulkRNA_object)) > 1
-bulkRNA_object = bulkRNA_object[keep, ]
+nrow(bulkRNA_raw)
+keep = rowSums(counts(bulkRNA_raw)) > 1
+bulkRNA_object = bulkRNA_raw[keep, ]
 
 
 #' The variance stabilizing transformation and the rlog
@@ -60,8 +60,29 @@ bulkRNA_object = bulkRNA_object[keep, ]
 vsd_bulkRNA = vst(bulkRNA_object, blind = FALSE)
 
 
+# make a plot on the VST transformation:
+modi.bulkRNA_object = estimateSizeFactors(bulkRNA_object)
 
-head(assay(vsd), 3)
+transformed_data = bind_rows(
+  as_data_frame(log2(counts(modi.bulkRNA_object, normalized = T)[, 1:15] + 1)) %>%
+    mutate(transformation = "log2(x + 1)"),
+  as_data_frame(assay(vsd_bulkRNA)[, 1:15]) %>% 
+    mutate(transformation = "vst"))
+
+colnames(transformed_data)[1:2] = c("x", "y")  
+
+lvls = c("log2(x + 1)", "vst")
+transformed_data$transformation <- factor(transformed_data$transformation, levels = lvls)
+
+VST_bulkRNA.plot = ggplot(transformed_data, 
+       aes(x = x, y = y)) + geom_hex(bins = 80) +
+  coord_fixed() + facet_grid( . ~ transformation)  
+
+VST_bulkRNA.plot
+
+
+#' Sample distances: how similar are samples 
+
 
 
 
