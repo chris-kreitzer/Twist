@@ -96,6 +96,20 @@ if (setup) {
   }
 
 
+## loading data directly from LifeScienceCluster:
+library(ssh.utils)
+cp.remote(remote.src = 'kreitzer@vlogin1.csb.univie.ac.at', 
+          remote.dest = '',
+          path.src = '',
+          path.dest = "/scratch/kreitzer/tmp/chr10_filtered_bcf",
+          verbose = F)
+
+
+
+
+
+
+
 
 
 if (PRE_ANALYSIS)

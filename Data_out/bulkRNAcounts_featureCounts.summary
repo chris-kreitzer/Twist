@@ -1,0 +1,15 @@
+Status	Bubble_1_trimmed_nemVec2Aligned.sortedByCoord.out.bam	Bubble_2_trimmed_nemVec2Aligned.sortedByCoord.out.bam	Bubble_3_trimmed_nemVec2Aligned.sortedByCoord.out.bam	Twi4d_1_trimmed_nemVec2Aligned.sortedByCoord.out.bam	Twi4d_2_trimmed_nemVec2Aligned.sortedByCoord.out.bam	Twi4d_3_trimmed_nemVec2Aligned.sortedByCoord.out.bam	TwiHead1_trimmed_nemVec2Aligned.sortedByCoord.out.bam	TwiHead2_trimmed_nemVec2Aligned.sortedByCoord.out.bam	TwiHead3_trimmed_nemVec2Aligned.sortedByCoord.out.bam	WT4d_1_trimmed_nemVec2Aligned.sortedByCoord.out.bam	WT4d_2_trimmed_nemVec2Aligned.sortedByCoord.out.bam	WT4d_3_trimmed_nemVec2Aligned.sortedByCoord.out.bam	WThead_1_trimmed_nemVec2Aligned.sortedByCoord.out.bam	WThead_2_trimmed_nemVec2Aligned.sortedByCoord.out.bam	WThead_3_trimmed_nemVec2Aligned.sortedByCoord.out.bam
+Assigned	7769222	9733496	12103887	21217831	16808250	21111667	16380509	14031563	19480256	24160384	20870838	17011020	13143247	13762387	18515810
+Unassigned_Unmapped	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0
+Unassigned_Read_Type	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0
+Unassigned_Singleton	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0
+Unassigned_MappingQuality	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0
+Unassigned_Chimera	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0
+Unassigned_FragmentLength	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0
+Unassigned_Duplicate	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0
+Unassigned_MultiMapping	15317158	18752107	20454197	4335709	3450753	3794089	16901502	13196467	19385598	4472849	3889952	3244346	9284668	9722465	11260723
+Unassigned_Secondary	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0
+Unassigned_NonSplit	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0
+Unassigned_NoFeatures	346511	436285	553006	1506274	1212469	1153996	927767	815119	1157378	1503822	1315631	1112716	684762	716968	990215
+Unassigned_Overlapping_Length	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0
+Unassigned_Ambiguity	388910	491691	618480	1031064	833269	1109899	814223	707615	995548	1208236	1095106	853945	672586	701318	951931
