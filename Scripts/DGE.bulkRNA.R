@@ -33,6 +33,24 @@ bulkRNA_in = bulkRNA_in[, seq(7, ncol(bulkRNA_in), 1)]
 colnames(bulkRNA_in) = c('Bubble1', 'Bubble2', 'Bubble3', 'Twi4d_1', 'Twi4d_2', 'Twi4d_3', 'Twihead_1', 'Twihead_2', 'Twihead_3', 
                          'WT4d_1', 'WT4d_2', 'WT4d_3', 'WThead_1', 'WThead_2', 'WThead_3')
 
+
+#' raw data summary for twist gene across all samples
+twist.raw = bulkRNA_in[which(row.names(bulkRNA_in) == 'NV2.10864'), ]
+
+all.out = data.frame()
+for(i in seq(1, ncol(twist.raw), 3)){
+  t.mean = apply(twist.raw[1, seq(i, i+2, 1)], 1, mean)
+  t.sub = data.frame(group = colnames(twist.raw)[i],
+                     mean.twist = t.mean)
+  all.out = rbind(all.out, t.sub)
+}
+
+#' make plot
+ggplot(all.out, aes(x = group, y = mean.twist)) + geom_bar(stat = 'identity') +
+  labs(title = 'RAW counts; most basic MEAN summary over 3 replicates')
+
+
+
 # set condition for DESeq2 analysis (sample basis)
 sampleRNA = factor(c('Bubble1', 'Bubble2', 'Bubble3', 'Twi4d_1', 'Twi4d_2', 'Twi4d_3', 'Twihead_1', 'Twihead_2', 'Twihead_3', 
                      'WT4d_1', 'WT4d_2', 'WT4d_3', 'WThead_1', 'WThead_2', 'WThead_3'))
@@ -84,6 +102,19 @@ VST_bulkRNA.plot = ggplot(transformed_data,
 
 VST_bulkRNA.plot
 
+#' variance stabilized transformation for counts data for Twist;
+vsd.twist = assay(vsd_bulkRNA)
+vsd.twist = data.frame(vsd.twist[which(row.names(vsd.twist) == 'NV2.10864'), ])
+colnames(vsd.twist) = 'vsd'
+vsd.twist$sample = row.names(vsd.twist)
+vsd.twist$sample = substr(x = vsd.twist$sample, start = 1, stop = nchar(vsd.twist$sample) - 1)
+
+#' make plot
+ggplot(vsd.twist, aes(x = sample, y = vsd)) + geom_jitter(width = 0.1, size = 1.3) +
+  theme_bw() +
+  coord_fixed() +
+  labs(x = '', y = 'variance-stabilization-transformation', title = 'vst-Twist expression')
+
 
 #' Sample distances: how similar are samples 
 sampleDist = dist(t(assay(vsd_bulkRNA)))
@@ -134,13 +165,38 @@ ggplot(PCA_raw,
 DGE_bulkRNA = DESeq(bulkRNA_object)
 DGE_out = results(DGE_bulkRNA)
 
+#' raise the log2 fold change threshold, 
+#' show more substantial changes due to treatment (CRISPR)
+#' instead of lfcThreshold = 0
+DGE_out_conservative = results(DGE_bulkRNA, lfcThreshold = 1)
+table(DGE_out_conservative$padj < 0.1)
 
+#' extracting genes with strongest lfc down-regulation signal
+results_out = subset(DGE_out_conservative, padj < 0.1)
+results_out = results_out[order(results_out$log2FoldChange), ]
 
+x = as.data.frame(results_out, row.names = row.names(results_out))
 
+#' example; of DE gene; NV2.618 (can this trend already be seen in vst data?)
+vsd.618 = assay(vsd_bulkRNA)
+vsd.618 = data.frame(vsd.618[which(row.names(vsd.618) == 'NV2.618'), ])
+colnames(vsd.618) = 'vsd'
+vsd.618$sample = row.names(vsd.618)
+vsd.618$sample = substr(x = vsd.618$sample, start = 1, stop = nchar(vsd.618$sample) - 1)
+vsd.618$group = c(rep('mut', 9), rep('wt', 6))
 
+#' make plot
+ggplot(vsd.618, aes(x = sample, y = vsd, color = group)) + 
+  geom_jitter(width = 0.1, size = 1.3) +
+  scale_color_manual(values = c('mut' = 'red',
+                                'wt' = 'blue')) +
+  theme_bw() +
+  coord_fixed() +
+  labs(x = '', y = 'variance-stabilization-transformation', title = 'vst-NV2.618 expression')
 
-
-
+## make a visualization for the top gene (most different)
+topDiffGene = rownames(DGE_out_conservative)[which.min(DGE_out_conservative$padj)]
+plotCounts(DGE_bulkRNA, gene = topDiffGene, intgroup = 'condition')
 
 
 
