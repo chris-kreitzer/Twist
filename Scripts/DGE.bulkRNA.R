@@ -94,7 +94,7 @@ transformed_data = bind_rows(
 colnames(transformed_data)[1:2] = c("x", "y")  
 
 lvls = c("log2(x + 1)", "vst")
-transformed_data$transformation <- factor(transformed_data$transformation, levels = lvls)
+transformed_data$transformation = factor(transformed_data$transformation, levels = lvls)
 
 VST_bulkRNA.plot = ggplot(transformed_data, 
        aes(x = x, y = y)) + geom_hex(bins = 80) +
@@ -174,8 +174,7 @@ table(DGE_out_conservative$padj < 0.1)
 #' extracting genes with strongest lfc down-regulation signal
 results_out = subset(DGE_out_conservative, padj < 0.1)
 results_out = results_out[order(results_out$log2FoldChange), ]
-
-x = as.data.frame(results_out, row.names = row.names(results_out))
+results_out = as.data.frame(results_out, row.names = row.names(results_out))
 
 #' example; of DE gene; NV2.618 (can this trend already be seen in vst data?)
 vsd.618 = assay(vsd_bulkRNA)
@@ -197,6 +196,26 @@ ggplot(vsd.618, aes(x = sample, y = vsd, color = group)) +
 ## make a visualization for the top gene (most different)
 topDiffGene = rownames(DGE_out_conservative)[which.min(DGE_out_conservative$padj)]
 plotCounts(DGE_bulkRNA, gene = topDiffGene, intgroup = 'condition')
+
+
+##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+## Differential gene expression; precise look into the data
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
