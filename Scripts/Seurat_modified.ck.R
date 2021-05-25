@@ -1,17 +1,30 @@
-###############################
-# script for processing with seurat Vs3
-#
-## FIRST... UPDATE ALL PATHWAYS TO WHERE YOU FIND THE FILES##
-#
-###############################
+## scRNA analysis using Seurat;
+## This script is an update of Alison's original script (provided via DropBox)
+## 
+## Start: 05/24
+## 
+## chris kreitzer
 
-#set working directory and memory
-setwd("D:/Dropbox/Nematostella/analysis/R_AGC") ## Where you want to work
 
-#load libraries: 
-##have to install these all the first time and POSSIBLY their dependencies until you get no errors.
+rm(list = ls())
+.rs.restartR()
+setwd('~/Documents/GitHub/Twist/')
+
+
+## Libraries
 library(easypackages)
-libraries("Seurat", "Matrix", "readxl","RColorBrewer",'pals','patchwork','ggplot2')
+library(Seurat)
+libraries("Seurat", 
+          "Matrix", 
+          "readxl",
+          "RColorBrewer",
+          'pals',
+          'patchwork',
+          'ggplot2')
+
+
+## Input; Data load via system command:
+system('sshpass -p "chris2340" scp -r kreitzer@vlogin1.csb.univie.ac.at:/scratch/kreitzer/Nematostella/results/map/cellranger/polypcontrol/outs/filtered_feature_bc_matrix /Users/chriskreitzer/Documents/Github/Twist')
 
 
 #here are the three parts of the script, can run all or some each time
@@ -96,26 +109,14 @@ if (setup) {
   }
 
 
+
 ## loading data directly from LifeScienceCluster:
-library(ssh.utils)
-cp.remote(remote.src = 'kreitzer@vlogin1.csb.univie.ac.at', 
-          remote.dest = '',
-          path.src = '',
-          path.dest = "/scratch/kreitzer/tmp/chr10_filtered_bcf",
-          verbose = F)
-
-
-
-
-
-
-
-
+#' using system command to do so;
 
 if (PRE_ANALYSIS)
 {
   #direct to the matrix files of interest here.
-  raw.data1 <- Read10X(data.dir = 'Z:/sequencing/Alison/Nematostella/TwistSequencing/TwistMutantTissue_12000x2')
+  raw.data1 <- Read10X(data.dir = getwd())
   raw.data2 <- Read10X(data.dir = 'Z:/sequencing/Alison/Nematostella/TwistSequencing/ControlTissue_12000x2')
   
   # # set the gene names to the annotations

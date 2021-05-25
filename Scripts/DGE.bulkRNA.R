@@ -18,11 +18,16 @@ rm(list = ls())
 #   install.packages("BiocManager")
 # 
 # BiocManager::install("DESeq2", force = T)
+# BiocManager::install("apeglm")
 library("DESeq2")
 library(ggplot2)
 library(dplyr)
 library("pheatmap")
 library("RColorBrewer")
+library("ggbeeswarm")
+library("apeglm")
+library("genefilter")
+
 
 ## Input and Processing
 bulkRNA_in = read.csv(file = 'Data_out/bulkRNAcounts_featureCounts', 
@@ -200,13 +205,32 @@ plotCounts(DGE_bulkRNA, gene = topDiffGene, intgroup = 'condition')
 
 ##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ## Differential gene expression; precise look into the data
+topGene = plotCounts(DGE_bulkRNA, gene = topDiffGene, intgroup = c('condition', 'sampleRNA'), returnData = T)
+
+#' visualizaiton
+topGene.plot = ggplot(topGene, aes(x = condition, y = count, color = sampleRNA)) +
+  scale_y_log10() +  
+  geom_beeswarm(cex = 3) +
+  theme_bw() +
+  labs(y = 'log10(counts)', title = paste0(topDiffGene))
+topGene.plot
 
 
+#' MA plot:
+resultsNames(DGE_bulkRNA);
+resMA = lfcShrink(DGE_bulkRNA, coef = 'condition_wt_vs_mut', type = 'apeglm')
+plotMA(resMA)
 
 
+#' gene clustering:
+topVarGenes = head(order(rowVars(assay(vsd_bulkRNA)), decreasing = TRUE), 20)
+mat = assay(vsd_bulkRNA)[topVarGenes, ]
+mat = mat - rowMeans(mat)
+anno = as.data.frame(colData(vsd_bulkRNA)[, c('sampleRNA', 'condition')])
+pheatmap(mat, annotation_col = anno, main = 'top20 diff gene; [vst-counts]', fontsize = 12)
 
-
-
+#' one example;
+x = assay(vsd_bulkRNA)[row.names(assay(vsd_bulkRNA)) == 'NV2.5412', ]
 
 
 
