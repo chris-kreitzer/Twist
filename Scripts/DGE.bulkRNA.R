@@ -27,7 +27,7 @@ library("RColorBrewer")
 library("ggbeeswarm")
 library("apeglm")
 library("genefilter")
-
+library(rlist)
 
 ## Input and Processing
 bulkRNA_in = read.csv(file = 'Data_out/bulkRNAcounts_featureCounts', 
@@ -40,34 +40,35 @@ colnames(bulkRNA_in) = c('Bubble1', 'Bubble2', 'Bubble3', 'Twi4d_1', 'Twi4d_2', 
 
 
 #' gene filtering; @least: 10 reads per replicate - in two groups to keep gene
-
+#' Loop through Libraries (at least 10 reads in every replicate), and then at least in two libraries to compare DGE
+df = list()
 for(i in seq(1, 15, by = 3)){
+  print(i)
   data.subset = bulkRNA_in[, c(i, i+1, i+2)]
   data.subset$var = ifelse(apply(data.subset, 1, min) >= 10, 'keep', 'discard')
-  colnames(data.subset)[ncol(data.subset)] = colnames(bulkRNA_in)[i]
+  data.subset$gene = row.names(data.subset)
+  colnames(data.subset)[grep(pattern = 'var', colnames(data.subset))] = colnames(bulkRNA_in)[i]
+  data.keep = data.subset[, c(ncol(data.subset) - 1, ncol(data.subset))]
   
+  df[[i]] = data.keep
+  rm(data.keep)
+  rm(data.subset)
   
 }
+#' sub modies;
+df = df[lengths(df) != 0] # exclude zero elements
+df = list.cbind(df)
+df[, 'gene' == names(df)] = NULL
+df$final = ifelse(apply(df, 1, function(x) sum(x == 'keep') >= 2), 'keep', 'discard') #' library merge
+
+#' which genes to keep
+gene.ii = row.names(bulkRNA_in)[which(df$final == 'keep')]
+
+#' updated raw counts
+bulkRNA_modi = bulkRNA_in[which(row.names(bulkRNA_in) %in% gene.ii),, drop = F]
 
 
-a = bulkRNA_in[, c(1:3)]
-a$Bubble = 
-
-head(a)
-bulkRNA_in[,c()]
-
-b = bulkRNA_in[, c(4:6)]
-b$min = apply(b, 1, min)
-
-head(a)
-head(b)
-d = merge(a,b, by = 'row.names', all.x = T)
-dim(a)
-dim(b)
-dim(d)
-head(d)
-
-merge(tt,z,by="row.names",all.x=TRUE)[,-(5:8)]
+##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #' raw data summary for twist gene across all samples
 twist.raw = bulkRNA_in[which(row.names(bulkRNA_in) == 'NV2.10864'), ]
 
@@ -85,6 +86,7 @@ ggplot(all.out, aes(x = group, y = mean.twist)) + geom_bar(stat = 'identity') +
 
 
 
+##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # set condition for DESeq2 analysis (sample basis)
 sampleRNA = factor(c('Bubble1', 'Bubble2', 'Bubble3', 'Twi4d_1', 'Twi4d_2', 'Twi4d_3', 'Twihead_1', 'Twihead_2', 'Twihead_3', 
                      'WT4d_1', 'WT4d_2', 'WT4d_3', 'WThead_1', 'WThead_2', 'WThead_3'))
@@ -94,17 +96,13 @@ condition = factor(c('mut', 'mut', 'mut', 'mut', 'mut', 'mut',
                      'wt', 'wt', 'wt'))
 
 # creating DESeq2 object:
-bulkRNA_raw = DESeqDataSetFromMatrix(countData = bulkRNA_in, 
+bulkRNA_object = DESeqDataSetFromMatrix(countData = bulkRNA_modi, 
                                     colData = DataFrame(sampleRNA, condition),
                                     design = sampleRNA ~ condition)
 
 
 ## DESeq2 WORKFLOW:
-#' Pre-filtering the dataset:
-#' remove rows with 0's: NO COUNTS OR just single counts across all samples
-nrow(bulkRNA_raw)
-keep = rowSums(counts(bulkRNA_raw)) > 1
-bulkRNA_object = bulkRNA_raw[keep, ]
+
 
 
 #' The variance stabilizing transformation and the rlog
