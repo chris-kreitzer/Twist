@@ -95,14 +95,19 @@ condition = factor(c('mut', 'mut', 'mut', 'mut', 'mut', 'mut',
                      'mut', 'mut', 'mut', 'wt','wt', 'wt', 
                      'wt', 'wt', 'wt'))
 
+coldata = data.frame(condition = condition,
+                     library = sampleRNA)
+row.names(coldata) = colnames(bulkRNA_in)
+                   
+
 # creating DESeq2 object:
 bulkRNA_object = DESeqDataSetFromMatrix(countData = bulkRNA_modi, 
-                                    colData = DataFrame(sampleRNA, condition),
-                                    design = sampleRNA ~ condition)
+                                    colData = coldata,
+                                    design = library ~ condition)
 
 
+##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ## DESeq2 WORKFLOW:
-
 
 
 #' The variance stabilizing transformation and the rlog
@@ -112,27 +117,53 @@ bulkRNA_object = DESeqDataSetFromMatrix(countData = bulkRNA_modi,
 
 #' here I am using Variance-stabilizing transformation (VST);
 vsd_bulkRNA = vst(bulkRNA_object, blind = FALSE)
+rlog_bulkRNA = rlog(bulkRNA_object, blind = FALSE)
 
-
-# make a plot on the VST transformation:
-modi.bulkRNA_object = estimateSizeFactors(bulkRNA_object)
+#' compare the normalization methods on twist;
+bulkRNA_object = estimateSizeFactors(bulkRNA_object)
 
 transformed_data = bind_rows(
-  as_data_frame(log2(counts(modi.bulkRNA_object, normalized = T)[, 1:15] + 1)) %>%
-    mutate(transformation = "log2(x + 1)"),
+  as_data_frame(log2(counts(bulkRNA_object, normalized = T)[, 1:15] + 1)) %>%
+    mutate(transformation = "log2(x + 1)",
+           gene = row.names(assay(bulkRNA_object))),
   as_data_frame(assay(vsd_bulkRNA)[, 1:15]) %>% 
-    mutate(transformation = "vst"))
+    mutate(transformation = "vst",
+           gene = row.names(assay(vsd_bulkRNA))),
+  as_data_frame(assay(rlog_bulkRNA)[, 1:15]) %>% 
+    mutate(transformation = "rlog",
+           gene = row.names(assay(rlog_bulkRNA))))
 
-colnames(transformed_data)[1:2] = c("x", "y")  
 
-lvls = c("log2(x + 1)", "vst")
-transformed_data$transformation = factor(transformed_data$transformation, levels = lvls)
+#' extracting normalized counts for twist (3 independent methods): 
+twist_transformed = transformed_data[which(transformed_data$gene == 'NV2.10864'), ]
 
-VST_bulkRNA.plot = ggplot(transformed_data, 
-       aes(x = x, y = y)) + geom_hex(bins = 80) +
-  coord_fixed() + facet_grid( . ~ transformation)  
+twist.converted = data.frame()
+for(i in 1:nrow(twist_transformed)){
+  out = as.data.frame(t(twist_transformed[i, ]))
+  out$method = out$V1[which(row.names(out) == 'transformation')]
+  out$library = row.names(out)
+  out$library = gsub('\\_[0-9]$', '', out$library)
+  out = out[1:15, ]
+  twist.converted = rbind(twist.converted, out)
+}
 
-VST_bulkRNA.plot
+
+#' make plot; comparing normalization methods:
+twist.converted$library = ifelse(grepl(pattern = 'Bubble.*', twist.converted$library), 
+                                 gsub('[0-9]$', '', twist.converted$library), twist.converted$library)
+
+twist_bulkRNA.plot = ggplot(twist.converted,
+       aes(x = library, y = as.numeric(V1))) + 
+  geom_jitter(width = 0.2) +
+  facet_grid( . ~ method) +
+  theme_bw() +
+  labs(x = '', y = 'normalized counts',
+       title = 'Comparing different normalization methods on twist expression across different libraries')
+
+twist_bulkRNA.plot
+
+
+
 
 #' variance stabilized transformation for counts data for Twist;
 vsd.twist = assay(vsd_bulkRNA)
@@ -146,6 +177,8 @@ ggplot(vsd.twist, aes(x = sample, y = vsd)) + geom_jitter(width = 0.1, size = 1.
   theme_bw() +
   coord_fixed() +
   labs(x = '', y = 'variance-stabilization-transformation', title = 'vst-Twist expression')
+
+
 
 
 #' Sample distances: how similar are samples 
