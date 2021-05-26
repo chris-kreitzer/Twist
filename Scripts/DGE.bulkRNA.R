@@ -39,6 +39,35 @@ colnames(bulkRNA_in) = c('Bubble1', 'Bubble2', 'Bubble3', 'Twi4d_1', 'Twi4d_2', 
                          'WT4d_1', 'WT4d_2', 'WT4d_3', 'WThead_1', 'WThead_2', 'WThead_3')
 
 
+#' gene filtering; @least: 10 reads per replicate - in two groups to keep gene
+
+for(i in seq(1, 15, by = 3)){
+  data.subset = bulkRNA_in[, c(i, i+1, i+2)]
+  data.subset$var = ifelse(apply(data.subset, 1, min) >= 10, 'keep', 'discard')
+  colnames(data.subset)[ncol(data.subset)] = colnames(bulkRNA_in)[i]
+  
+  
+}
+
+
+a = bulkRNA_in[, c(1:3)]
+a$Bubble = 
+
+head(a)
+bulkRNA_in[,c()]
+
+b = bulkRNA_in[, c(4:6)]
+b$min = apply(b, 1, min)
+
+head(a)
+head(b)
+d = merge(a,b, by = 'row.names', all.x = T)
+dim(a)
+dim(b)
+dim(d)
+head(d)
+
+merge(tt,z,by="row.names",all.x=TRUE)[,-(5:8)]
 #' raw data summary for twist gene across all samples
 twist.raw = bulkRNA_in[which(row.names(bulkRNA_in) == 'NV2.10864'), ]
 
