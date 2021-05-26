@@ -162,6 +162,8 @@ twist_bulkRNA.plot = ggplot(twist.converted,
 
 twist_bulkRNA.plot
 
+#' the main take-home from here is that different normalization methods do not skew the overall pattern;
+
 
 
 
