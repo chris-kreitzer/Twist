@@ -70,6 +70,7 @@ bulkRNA_modi = bulkRNA_in[which(row.names(bulkRNA_in) %in% gene.ii),, drop = F]
 #' convert to matrix
 bulkRNA_modi = as.matrix(bulkRNA_modi)
 
+
 ##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #' raw data summary for twist gene across all samples
 twist.raw = bulkRNA_in[which(row.names(bulkRNA_in) == 'NV2.10864'), ]
@@ -90,17 +91,22 @@ ggplot(all.out, aes(x = group, y = mean.twist)) + geom_bar(stat = 'identity') +
 
 ##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # set condition for DESeq2 analysis (sample basis)
-# sampleRNA = factor(c('Bubble1', 'Bubble2', 'Bubble3', 'Twi4d_1', 'Twi4d_2', 'Twi4d_3', 'Twihead_1', 'Twihead_2', 'Twihead_3', 
-#                      'WT4d_1', 'WT4d_2', 'WT4d_3', 'WThead_1', 'WThead_2', 'WThead_3'))
-
+phenotype = factor(c(rep('Bubble', 3),
+                     rep('Twi4d', 3),
+                     rep('TwiHead', 3),
+                     rep('WT4d', 3),
+                     rep('WTHead', 3)))
 condition = factor(c(rep('mut', 9), rep('wt', 6)))
-coldata = data.frame(row.names = colnames(bulkRNA_modi), condition)
+coldata = data.frame(row.names = colnames(bulkRNA_modi), phenotype, condition)
 
 
 # creating DESeq2 object:
 bulkRNA_object = DESeqDataSetFromMatrix(countData = bulkRNA_modi, 
                                     colData = coldata,
-                                    design = ~condition)
+                                    design = ~(phenotype ~ condition))
+
+bulkRNA_object$group = factor(paste0(bulkRNA_object$phenotype, bulkRNA_object$condition))
+design(bulkRNA_object) = ~ group
 
 
 
@@ -281,20 +287,41 @@ volcanoplot(resdata, lfcthresh = 1, sigthresh = 0.05, textcx = .8, xlim = c(-2.3
 dev.off()
 
 
+##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+## Looking into contrasts; results(DGE_bulkRNA)
+resultsNames(DGE_bulkRNA)
 
-DGE_out = results(DGE_bulkRNA, )
+for(i in 2:length(resultsNames(DGE_bulkRNA))){
+  print(resultsNames(DGE_bulkRNA)[i])
+  var1 = strsplit(resultsNames(DGE_bulkRNA)[i], '_')[[1]][2]
+  var2 = strsplit(resultsNames(DGE_bulkRNA)[i], '_')[[1]][4]
+  
+  #' running contrasts;
+  res = results(DGE_bulkRNA,
+                contrast = c('group', var1, var2),
+                lfcThreshold = 1)
+  res_out = merge(as.data.frame(res),
+              as.data.frame(counts(DGE_bulkRNA, normalized = TRUE)),
+              by = 'row.names', sort = F)
+  
+  names(res_out)[1] = 'Gene'
+  res_out = res_out[which(res_out$padj <= 0.01 & abs(res_out$log2FoldChange) > 1),, drop = F]
+  write.table(x = res_out, file = paste0(var1, '_', var2, '_comparision.txt'), sep = '\t', quote = F, row.names = F)
+}
 
-#' raise the log2 fold change threshold, 
-#' show more substantial changes due to treatment (CRISPR)
-#' instead of lfcThreshold = 0
-DGE_out_conservative = results(DGE_bulkRNA, lfcThreshold = 1)
-table(DGE_out_conservative$padj < 0.1)
 
-#' extracting genes with strongest lfc down-regulation signal
-results_out = subset(DGE_out_conservative, padj < 0.1)
-results_out = results_out[order(results_out$log2FoldChange), ]
-results_out = as.data.frame(results_out, row.names = row.names(results_out))
 
+
+
+##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+
+
+
+
+##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+## Misc
 #' example; of DE gene; NV2.618 (can this trend already be seen in vst data?)
 vsd.618 = assay(vsd_bulkRNA)
 vsd.618 = data.frame(vsd.618[which(row.names(vsd.618) == 'NV2.618'), ])
@@ -343,17 +370,5 @@ mat = mat - rowMeans(mat)
 anno = as.data.frame(colData(vsd_bulkRNA)[, c('sampleRNA', 'condition')])
 pheatmap(mat, annotation_col = anno, main = 'top20 diff gene; [vst-counts]', fontsize = 12)
 
-#' one example;
-x = assay(vsd_bulkRNA)[row.names(assay(vsd_bulkRNA)) == 'NV2.5412', ]
 
-
-
-
-
-
-
-
-
-
-
-
+x
