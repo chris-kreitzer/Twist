@@ -314,10 +314,18 @@ for(i in 2:length(resultsNames(DGE_bulkRNA))){
 
 
 ##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#' make annotations for the DE genes within the groups; focus on TF and muscle development;
+ortho_table = read.csv(file = 'orth.table.tsv', sep = '\t')
+ortho_table = ortho_table[!duplicated(ortho_table$NV2Id) & !is.na(ortho_table$NV2Id), ]
+colnames(ortho_table)
 
+#' one example: Twist 4d (mutant) early development vs Bubble (adult animal with mutation and phenotype)
+x = read.csv(file = 'Data_out/Twi4dmut_Bubblemut_comparision.txt', sep = '\t')
+x = merge(x, ortho_table[,c('NV2Id', 'BLAST.Hit', 'Trinotate.Descr', 'Emapper.Annotation')],
+          by.x = 'Gene', by.y = 'NV2Id', all.x = T)
+x = x[, c(1:13, 23, 24, 25)]
 
-
-
+write.table(x = x, file = 'Data_out/Annotated_DGE_Twi4d_Bubble.txt', sep = '\t', row.names = F, quote = F)
 
 
 ##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -370,5 +378,3 @@ mat = mat - rowMeans(mat)
 anno = as.data.frame(colData(vsd_bulkRNA)[, c('sampleRNA', 'condition')])
 pheatmap(mat, annotation_col = anno, main = 'top20 diff gene; [vst-counts]', fontsize = 12)
 
-
-x
