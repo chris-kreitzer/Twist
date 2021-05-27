@@ -67,6 +67,8 @@ gene.ii = row.names(bulkRNA_in)[which(df$final == 'keep')]
 #' updated raw counts
 bulkRNA_modi = bulkRNA_in[which(row.names(bulkRNA_in) %in% gene.ii),, drop = F]
 
+#' convert to matrix
+bulkRNA_modi = as.matrix(bulkRNA_modi)
 
 ##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #' raw data summary for twist gene across all samples
@@ -88,27 +90,23 @@ ggplot(all.out, aes(x = group, y = mean.twist)) + geom_bar(stat = 'identity') +
 
 ##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # set condition for DESeq2 analysis (sample basis)
-sampleRNA = factor(c('Bubble1', 'Bubble2', 'Bubble3', 'Twi4d_1', 'Twi4d_2', 'Twi4d_3', 'Twihead_1', 'Twihead_2', 'Twihead_3', 
-                     'WT4d_1', 'WT4d_2', 'WT4d_3', 'WThead_1', 'WThead_2', 'WThead_3'))
+# sampleRNA = factor(c('Bubble1', 'Bubble2', 'Bubble3', 'Twi4d_1', 'Twi4d_2', 'Twi4d_3', 'Twihead_1', 'Twihead_2', 'Twihead_3', 
+#                      'WT4d_1', 'WT4d_2', 'WT4d_3', 'WThead_1', 'WThead_2', 'WThead_3'))
 
-condition = factor(c('mut', 'mut', 'mut', 'mut', 'mut', 'mut', 
-                     'mut', 'mut', 'mut', 'wt','wt', 'wt', 
-                     'wt', 'wt', 'wt'))
+condition = factor(c(rep('mut', 9), rep('wt', 6)))
+coldata = data.frame(row.names = colnames(bulkRNA_modi), condition)
 
-coldata = data.frame(condition = condition,
-                     library = sampleRNA)
-row.names(coldata) = colnames(bulkRNA_in)
-                   
 
 # creating DESeq2 object:
 bulkRNA_object = DESeqDataSetFromMatrix(countData = bulkRNA_modi, 
                                     colData = coldata,
-                                    design = library ~ condition)
+                                    design = ~condition)
+
 
 
 ##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ## DESeq2 WORKFLOW:
-
+#' working with bulkRNA_object
 
 #' The variance stabilizing transformation and the rlog
 # Many common statistical methods for exploratory analysis of multidimensional data, 
@@ -227,10 +225,64 @@ ggplot(PCA_raw,
   ggtitle("PCA with variance-stabilized transformed data")
 
 
+
 ##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ## Differential gene expression: 
+#' DESeq function consits of the following steps:
+#' estimation of size factors (controlling for differences in the sequencing depth of the samples);
+#' estimation of dispersion values for each gene
+#' fitting a generalized linear model (negative binomial model)
 DGE_bulkRNA = DESeq(bulkRNA_object)
-DGE_out = results(DGE_bulkRNA)
+
+
+#' Dispersion plot;
+png("qc-dispersions.png", 1000, 1000, pointsize=20)
+plotDispEsts(DGE_bulkRNA, main="Dispersion plot")
+dev.off()
+
+
+#' get differential expression results
+res = results(DGE_bulkRNA)
+table(res$padj < 0.05)
+
+#' Order by adjusted p-value
+res = res[order(res$padj), ]
+
+#' Merge with normalized count data
+resdata = merge(as.data.frame(res), as.data.frame(counts(DGE_bulkRNA, normalized = TRUE)), by="row.names", sort = FALSE)
+names(resdata)[1] = "Gene"
+
+#' write raw results:
+write.table(resdata, file = "DGE-results_raw.txt", sep = '\t', quote = F)
+
+
+#' Volcano plot with "significant" genes labeled
+volcanoplot = function(res, lfcthresh = 2, sigthresh = 0.05, 
+                       main = "Volcano Plot", 
+                       legendpos = "bottomright", 
+                       labelsig = TRUE, textcx = 1, ...) {
+  
+  with(res, plot(log2FoldChange, -log10(pvalue), pch = 20, main = main, ...))
+  with(subset(res, padj < sigthresh), points(log2FoldChange, -log10(pvalue), pch = 20, col = "red", ...))
+  with(subset(res, abs(log2FoldChange) > lfcthresh), points(log2FoldChange, -log10(pvalue), pch = 20, col = "orange", ...))
+  with(subset(res, padj < sigthresh & abs(log2FoldChange) > lfcthresh), points(log2FoldChange, -log10(pvalue), pch = 20, col = "green", ...))
+  if (labelsig) {
+    require(calibrate)
+    with(subset(res, padj < sigthresh & abs(log2FoldChange) > lfcthresh), textxy(log2FoldChange, -log10(pvalue), labs = Gene, cex = textcx, ...))
+  }
+  legend(legendpos, xjust = 1, yjust = 1, 
+         legend = c(paste("FDR<", sigthresh, sep = ""), 
+                    paste("|LogFC|>", lfcthresh, sep = ""), "both"), 
+         pch = 20, col = c("red", "orange", "green"))
+}
+
+png("diffexpr-volcanoplot.png", 1200, 1000, pointsize = 20)
+volcanoplot(resdata, lfcthresh = 1, sigthresh = 0.05, textcx = .8, xlim = c(-2.3, 2))
+dev.off()
+
+
+
+DGE_out = results(DGE_bulkRNA, )
 
 #' raise the log2 fold change threshold, 
 #' show more substantial changes due to treatment (CRISPR)
