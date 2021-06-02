@@ -164,7 +164,6 @@ twist_bulkRNA.plot
 
 
 
-
 #' variance stabilized transformation for counts data for Twist;
 vsd.twist = assay(vsd_bulkRNA)
 vsd.twist = data.frame(vsd.twist[which(row.names(vsd.twist) == 'NV2.10864'), ])
@@ -234,20 +233,32 @@ ggplot(PCA_raw,
 #' fitting a generalized linear model (negative binomial model)
 DGE_bulkRNA = DESeq(bulkRNA_object)
 
-
-#' get differential expression results
-res = results(object = DGE_bulkRNA, lfcThreshold = 1)
-table(res$padj < 0.05)
-
-
-#' Order by adjusted p-value
+#' get differential expression results;
+#' Bubble vs WT4d
+res = results(object = DGE_bulkRNA, lfcThreshold = 1, contrast = c('phenotype', 'Bubble', 'Twi4d'))
 res = res[order(res$padj), ]
-
 
 #' Merge with normalized count data
 resdata = merge(as.data.frame(res), as.data.frame(counts(DGE_bulkRNA, normalized = TRUE)), 
                 by = "row.names", sort = TRUE)
 names(resdata)[1] = "Gene"
+
+#' make annotations for the DE genes within the groups; focus on TF and muscle development;
+ortho_table = read.csv(file = 'Data_out/NV2_orthologe.table.tsv', sep = '\t')
+ortho_table = ortho_table[!duplicated(ortho_table$NV2Id) & !is.na(ortho_table$NV2Id), ]
+
+#' one example: Twist 4d (mutant) early development vs Bubble (adult animal with mutation and phenotype)
+Bubble_WT4d = merge(resdata, ortho_table[,c('NV2Id', 'TF', 'deM_TF', 'BLAST.Hit', 'Trinotate.Descr', 'Emapper.Annotation')],
+          by.x = 'Gene', by.y = 'NV2Id', all.x = T)
+
+
+## select for p-adjusted; TF and muscle;
+x = x[, c(1:13, 23, 24, 25)]
+
+write.table(x = x, file = 'Data_out/Annotated_DGE_Twi4d_Bubble.txt', sep = '\t', row.names = F, quote = F)
+
+
+
 
 
 #' write raw results:
@@ -305,19 +316,12 @@ for(i in 2:length(resultsNames(DGE_bulkRNA))){
 
 
 
-##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-#' make annotations for the DE genes within the groups; focus on TF and muscle development;
-ortho_table = read.csv(file = 'orth.table.tsv', sep = '\t')
-ortho_table = ortho_table[!duplicated(ortho_table$NV2Id) & !is.na(ortho_table$NV2Id), ]
-colnames(ortho_table)
 
-#' one example: Twist 4d (mutant) early development vs Bubble (adult animal with mutation and phenotype)
-x = read.csv(file = 'Data_out/Twi4dmut_Bubblemut_comparision.txt', sep = '\t')
-x = merge(x, ortho_table[,c('NV2Id', 'BLAST.Hit', 'Trinotate.Descr', 'Emapper.Annotation')],
-          by.x = 'Gene', by.y = 'NV2Id', all.x = T)
-x = x[, c(1:13, 23, 24, 25)]
 
-write.table(x = x, file = 'Data_out/Annotated_DGE_Twi4d_Bubble.txt', sep = '\t', row.names = F, quote = F)
+
+
+
+
 
 
 
