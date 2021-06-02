@@ -55,11 +55,12 @@ for(i in seq(1, 15, by = 3)){
   rm(data.subset)
   
 }
+
 #' sub modies;
 df = df[lengths(df) != 0] # exclude zero elements
 df = list.cbind(df)
 df[, 'gene' == names(df)] = NULL
-df$final = ifelse(apply(df, 1, function(x) sum(x == 'keep') >= 2), 'keep', 'discard') #' library merge
+df$final = ifelse(apply(df, 1, function(x) sum(x == 'keep') >= 1), 'keep', 'discard') #' library merge
 
 #' which genes to keep
 gene.ii = row.names(bulkRNA_in)[which(df$final == 'keep')]
@@ -91,23 +92,16 @@ ggplot(all.out, aes(x = group, y = mean.twist)) + geom_bar(stat = 'identity') +
 
 ##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # set condition for DESeq2 analysis (sample basis)
-phenotype = factor(c(rep('Bubble', 3),
-                     rep('Twi4d', 3),
-                     rep('TwiHead', 3),
-                     rep('WT4d', 3),
-                     rep('WTHead', 3)))
-condition = factor(c(rep('mut', 9), rep('wt', 6)))
-coldata = data.frame(row.names = colnames(bulkRNA_modi), phenotype, condition)
-
+# As we are solely interested in within group comparisions, we don't need to specify
+# any specific desing formula. As the name itself already contain the conditions (WT vs Mutant and Time)
+# 
+# I don't include individuals in the formula, as all the individuals show roughly the same expression;
+coldata = DataFrame(phenotype = factor(rep(c('Bubble', 'Twi4d', 'TwiHead', 'WT4d', 'WTHead'), each = 3)))
 
 # creating DESeq2 object:
 bulkRNA_object = DESeqDataSetFromMatrix(countData = bulkRNA_modi, 
                                     colData = coldata,
-                                    design = ~(phenotype ~ condition))
-
-bulkRNA_object$group = factor(paste0(bulkRNA_object$phenotype, bulkRNA_object$condition))
-design(bulkRNA_object) = ~ group
-
+                                    design = ~phenotype)
 
 
 ##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -241,29 +235,27 @@ ggplot(PCA_raw,
 DGE_bulkRNA = DESeq(bulkRNA_object)
 
 
-#' Dispersion plot;
-png("qc-dispersions.png", 1000, 1000, pointsize=20)
-plotDispEsts(DGE_bulkRNA, main="Dispersion plot")
-dev.off()
-
-
 #' get differential expression results
-res = results(DGE_bulkRNA)
+res = results(object = DGE_bulkRNA, lfcThreshold = 1)
 table(res$padj < 0.05)
+
 
 #' Order by adjusted p-value
 res = res[order(res$padj), ]
 
+
 #' Merge with normalized count data
-resdata = merge(as.data.frame(res), as.data.frame(counts(DGE_bulkRNA, normalized = TRUE)), by="row.names", sort = FALSE)
+resdata = merge(as.data.frame(res), as.data.frame(counts(DGE_bulkRNA, normalized = TRUE)), 
+                by = "row.names", sort = TRUE)
 names(resdata)[1] = "Gene"
 
+
 #' write raw results:
-write.table(resdata, file = "DGE-results_raw.txt", sep = '\t', quote = F)
+write.table(resdata, file = "DGE-results_raw.txt", sep = '\t', quote = F, row.names = F)
 
 
 #' Volcano plot with "significant" genes labeled
-volcanoplot = function(res, lfcthresh = 2, sigthresh = 0.05, 
+volcanoplot = function(res, lfcthresh = 1, sigthresh = 0.05, 
                        main = "Volcano Plot", 
                        legendpos = "bottomright", 
                        labelsig = TRUE, textcx = 1, ...) {
@@ -282,7 +274,7 @@ volcanoplot = function(res, lfcthresh = 2, sigthresh = 0.05,
          pch = 20, col = c("red", "orange", "green"))
 }
 
-png("diffexpr-volcanoplot.png", 1200, 1000, pointsize = 20)
+png("diffexpr-volcanoplot.png", 1400, 1200, pointsize = 15)
 volcanoplot(resdata, lfcthresh = 1, sigthresh = 0.05, textcx = .8, xlim = c(-2.3, 2))
 dev.off()
 
@@ -326,6 +318,11 @@ x = merge(x, ortho_table[,c('NV2Id', 'BLAST.Hit', 'Trinotate.Descr', 'Emapper.An
 x = x[, c(1:13, 23, 24, 25)]
 
 write.table(x = x, file = 'Data_out/Annotated_DGE_Twi4d_Bubble.txt', sep = '\t', row.names = F, quote = F)
+
+
+
+
+
 
 
 ##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
