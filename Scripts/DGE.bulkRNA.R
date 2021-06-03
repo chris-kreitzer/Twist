@@ -251,18 +251,51 @@ ortho_table = ortho_table[!duplicated(ortho_table$NV2Id) & !is.na(ortho_table$NV
 Bubble_WT4d = merge(resdata, ortho_table[,c('NV2Id', 'TF', 'deM_TF', 'BLAST.Hit', 'Trinotate.Descr', 'Emapper.Annotation')],
           by.x = 'Gene', by.y = 'NV2Id', all.x = T)
 
+#' refine based on padjust and logFC
+Bubble_WT4d = Bubble_WT4d[which(abs(Bubble_WT4d$log2FoldChange) > 1 & Bubble_WT4d$padj < 0.01),, drop = F]
+Bubble_WT4d = Bubble_WT4d[, -grep('^WThead*', colnames(Bubble_WT4d))]
+Bubble_WT4d = Bubble_WT4d[, -grep('Twihead*', colnames(Bubble_WT4d))]
+Bubble_WT4d = Bubble_WT4d[, -grep('Twi4d*', colnames(Bubble_WT4d))]
 
-## select for p-adjusted; TF and muscle;
-x = x[, c(1:13, 23, 24, 25)]
+#' export results:
+write.table(x = Bubble_WT4d, file = 'Data_out/Bubble_WT4d_dge_fulltable.txt', sep = '\t', row.names = F, quote = F)
 
-write.table(x = x, file = 'Data_out/Annotated_DGE_Twi4d_Bubble.txt', sep = '\t', row.names = F, quote = F)
+#' just TF and muscle annotation
+Bubble_WT4d_short = Bubble_WT4d[!is.na(Bubble_WT4d$TF) | !is.na(Bubble_WT4d$deM_TF), ]
+write.table(x = Bubble_WT4d_short, file = 'Data_out/Bubble_WT4d_dge_filtered.txt', sep = '\t', row.names = F, quote = F)
+
+
+##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#' comparision of TwiHead and WT4d; whether we see that twist is signigicantly different expressed;
+res = results(object = DGE_bulkRNA, lfcThreshold = 1, contrast = c('phenotype', 'TwiHead', 'WT4d'))
+res = res[order(res$padj), ]
+
+#' Merge with normalized count data
+resdata = merge(as.data.frame(res), as.data.frame(counts(DGE_bulkRNA, normalized = TRUE)), 
+                by = "row.names", sort = TRUE)
+names(resdata)[1] = "Gene"
+
+Twihead_WT4d = merge(resdata, ortho_table[,c('NV2Id', 'TF', 'deM_TF', 'BLAST.Hit', 'Trinotate.Descr', 'Emapper.Annotation')],
+                    by.x = 'Gene', by.y = 'NV2Id', all.x = T)
+
+#' refine based on padjust and logFC
+Twihead_WT4d = Twihead_WT4d[which(abs(Twihead_WT4d$log2FoldChange) > 1 & Twihead_WT4d$padj < 0.01),, drop = F]
+Twihead_WT4d = Twihead_WT4d[, -grep('^WThead*', colnames(Twihead_WT4d))]
+Twihead_WT4d = Twihead_WT4d[, -grep('Twi4d*', colnames(Twihead_WT4d))]
+Twihead_WT4d = Twihead_WT4d[, -grep('Bubble*', colnames(Twihead_WT4d))]
+
+#' export results:
+write.table(x = Twihead_WT4d, file = 'Data_out/Twihead_WT4d_dge_fulltable.txt', sep = '\t', row.names = F, quote = F)
+
+#' just TF and muscle annotation
+Twihead_WT4d_short = Twihead_WT4d[!is.na(Twihead_WT4d$TF) | !is.na(Twihead_WT4d$deM_TF), ]
+write.table(x = Twihead_WT4d_short, file = 'Data_out/Twihead_WT4d_dge_filtered.txt', sep = '\t', row.names = F, quote = F)
 
 
 
 
 
-#' write raw results:
-write.table(resdata, file = "DGE-results_raw.txt", sep = '\t', quote = F, row.names = F)
+
 
 
 #' Volcano plot with "significant" genes labeled
