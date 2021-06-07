@@ -1,4 +1,23 @@
-# Twist - analysis of twist mutant in *Nematostella vectensis*
+# Twist - analysis of twist mutant in *Nematostella vectensis*   
+
+
+## Hypothesis about ***NV-twist***   
+The observed CRISPR/Cas9 ***twist*** knock-out phenotype (Bubble, failed tentacle formation) is novel in Nematostella vectensis. 
+
+***NV-twist*** is involved in tentacle formation (broader context; muscle cell differentiation)   
+***NV-twist*** as a master TF regulator is involved in initiating a cancer-like phenotype (first described in Nematostella vectensis)
+
+## The main goal is hence:   
+- see which genes are differentially expressed in ***twist*** mutants and wild type animals
+- can we define a unique cell cluster, which elucidate the cell identity of this novel Bubble phenotype   
+- can we define a gene-regulatory network in which ***twist*** is involved. We are specifically interested in signalling pathways and Transcription factors.   
+
+## We need the money because:   
+- We have already produced a lot of data (single-cell RNA expression) and urgently a data analysist (ideally two)   
+- Based on those analysis (whether there is a link between cancer and twist, etc.) we would further go into validation studies   
+- Parallel we would employ a post-doc specialising in Antibody production, since there is no antibody available for ***twist***. An AB would be the definitiv goal, as with this in hand, we can start a Chip-Seq experiment, where we can directly elucidate the binding domains of ***twist*** on the DNA and hence infer the direct targets of ***NV-twist***  
+- We further need money, because we aim to publish in a high-ranking journal (if we can define cancer-like phenotype) and hence our reputation as lab as well as the contribution to a broader science community is given. 
+
 
 ## Data logistics and setup:  
 
