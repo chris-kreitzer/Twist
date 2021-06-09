@@ -24,10 +24,63 @@ libraries("Seurat",
 
 
 ## Input; Data load via system command:
+#' load annotation data from Alison
+load('Scripts/RData')
 system('sshpass -p "chris2340" scp -r kreitzer@vlogin1.csb.univie.ac.at:/scratch/kreitzer/Nematostella/results/map/cellranger/polypcontrol/outs/filtered_feature_bc_matrix /Users/chriskreitzer/Documents/Github/Twist')
 
+##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+## Make the new annotation object for scRNA analysis:
+orthotable_NV2 = read.csv('Data_out/NV2_orthologe.table.tsv', sep = '\t')
+NVE_IDs = annotations$NVE
 
-#here are the three parts of the script, can run all or some each time
+#' update ortho_table
+orthotable_update = orthotable_NV2[which(orthotable_NV2$GeneId %in% NVE_IDs),, drop = F]
+
+matched_id = data.frame()
+
+for(i in unique(orthotable_update$GeneId)){
+  NV2 = orthotable_update[which(orthotable_update$GeneId == i), ]
+  NV2id = NV2$NV2Id[!is.na(NV2$JGIProtID) | !is.na(NV2$ENSEMBL_ID) | !is.na(NV2$BLAST.Hit)]
+  if(length(NV2id) == 0){next}
+  out = data.frame(NVE = i,
+                   NV2 = NV2id)
+  matched_id = rbind(matched_id, out)
+}
+
+matched_id = matched_id[!is.na(matched_id$NV2), ]
+matched_id = unique(matched_id)
+
+
+
+
+NV2 = orthotable_update[which(orthotable_update$GeneId == 'NVE10'), ]
+b = a$NV2Id[!is.na(a$JGIProtID) | !is.na(a$ENSEMBL_ID)]
+
+
+
+
+
+annotations$NV2 = NA
+annotations = merge(annotations, orthotable_NV2[, c('GeneId', 'NV2Id')],
+                    by.x = 'NVE', by.y = 'GeneId', all.x = T)
+
+annotations = annotations[!duplicated(annotations$NVE), ]
+
+
+dim(annotations)
+dim(orthotable_NV2)
+colnames(orthotable_NV2)
+head(orthotable_NV2$GeneId, n = 50)
+length(intersect(orthotable_NV2$GeneId, annotations$NVE))
+
+
+head(annotations)
+
+
+
+
+
+# here are the three parts of the script, can run all or some each time
 setup = T #loads the gene lists - can save this as '.RData' and avoid running each time
 PRE_ANALYSIS = T #this loads the raw data and generates Seurat files for each library
 analysis = T #this analyzes the merged dataset; can also use this for each library separately
@@ -111,7 +164,25 @@ if (setup) {
 
 
 ## loading data directly from LifeScienceCluster:
-#' using system command to do so;
+#' using system command to do so; see top line
+load('Scripts/RData')
+raw = Read10X(data.dir = 'filtered_feature_bc_matrix/')
+lib1 = CreateSeuratObject(counts = raw, project = 'test')
+
+
+a = read.csv('filtered_feature_bc_matrix/features.tsv.gz', sep = '\t')
+b = read.csv('filtered_feature_bc_matrix/matrix.mtx.gz', sep = '\t')
+
+
+rownames(raw) = genes$gene_short_name
+
+length(genes$gene_short_name)
+length(row.names(raw))
+
+length(row.names(raw))
+
+
+
 
 if (PRE_ANALYSIS)
 {
@@ -173,6 +244,8 @@ if (PRE_ANALYSIS)
   #clean up the workspace  
   rm (raw.data1, raw.data2, lib1, lib2)
 }else{load (file = 'TWISTTissueMerged.raw.Robj')}
+
+load('Scripts/TWISTTissueMerged.raw.Robj')
 
 if (analysis)
 {
