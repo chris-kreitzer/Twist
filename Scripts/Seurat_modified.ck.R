@@ -33,59 +33,15 @@ system('sshpass -p "chris2340" scp -r kreitzer@vlogin1.csb.univie.ac.at:/scratch
 orthotable_NV2 = read.csv('Data_out/NV2_orthologe.table.tsv', sep = '\t')
 NVE_IDs = annotations$NVE
 
-#' update ortho_table
-orthotable_update = orthotable_NV2[which(orthotable_NV2$GeneId %in% NVE_IDs),, drop = F]
+o = orthotable_NV2[,c('GeneId', 'NV2Id')]
+o = o[!is.na(o$NV2Id), ]
+o = o[!duplicated(o$GeneId), ]
 
-matched_id = data.frame()
+annotation_updated = merge(o, annotations, by.x = 'GeneId', by.y = 'NVE', all.x = T)
 
-for(i in unique(orthotable_update$GeneId)){
-  NV2 = orthotable_update[which(orthotable_update$GeneId == i), ]
-  NV2id = NV2$NV2Id[!is.na(NV2$JGIProtID) | !is.na(NV2$ENSEMBL_ID) | !is.na(NV2$BLAST.Hit)]
-  if(length(NV2id) == 0){next}
-  out = data.frame(NVE = i,
-                   NV2 = NV2id)
-  matched_id = rbind(matched_id, out)
-}
+#' genes table:
+genes_updated = merge(o, genes, by.x = 'GeneId', by.y = 'NVE', all.x = T)
 
-matched_id = matched_id[!is.na(matched_id$NV2), ]
-matched_id = unique(matched_id)
-
-
-
-
-NV2 = orthotable_update[which(orthotable_update$GeneId == 'NVE10'), ]
-b = a$NV2Id[!is.na(a$JGIProtID) | !is.na(a$ENSEMBL_ID)]
-
-
-
-
-
-annotations$NV2 = NA
-annotations = merge(annotations, orthotable_NV2[, c('GeneId', 'NV2Id')],
-                    by.x = 'NVE', by.y = 'GeneId', all.x = T)
-
-annotations = annotations[!duplicated(annotations$NVE), ]
-
-
-dim(annotations)
-dim(orthotable_NV2)
-colnames(orthotable_NV2)
-head(orthotable_NV2$GeneId, n = 50)
-length(intersect(orthotable_NV2$GeneId, annotations$NVE))
-
-
-head(annotations)
-
-
-
-
-
-# here are the three parts of the script, can run all or some each time
-setup = T #loads the gene lists - can save this as '.RData' and avoid running each time
-PRE_ANALYSIS = T #this loads the raw data and generates Seurat files for each library
-analysis = T #this analyzes the merged dataset; can also use this for each library separately
-summarize.data.plots = T #this plots the summary plots from analysis
-find.DEGs = T#This calculates DEG lists from clustering in 'analysis'
 
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -94,36 +50,49 @@ find.DEGs = T#This calculates DEG lists from clustering in 'analysis'
 
 if (setup) {
   #load and update gene names...
-  genes = read_excel("D:/Dropbox/Nematostella/data/Import4R/genesfile/genes_mOs.xls") 
+  genes = genes_updated
   #this is the current version
   genes = as.data.frame(genes)
-  annotations = read_excel("D:/Dropbox/Nematostella/documents/Genelists/NVeannotations_NoDash.xls")
+  genes$GeneId = genes$NV2Id
+  genes$NV2Id = NULL
+  
+  annotations = as.data.frame(annotation_updated)
+  annotations$GeneId = annotations$NV2Id
+  annotations$NV2Id = NULL
+  
   known_genes = vector("double", nrow(annotations))
+  
   for (i in 1:nrow(annotations)){
-    known_genes[i] = match(annotations[i,1],genes[,1])
-    if (as.logical(annotations[i,2]==".")){
-      genes[known_genes[i],2] <- annotations[i,1]
-      annotations[i,2] = annotations[i,1] #this takes care of indexing problem later for GO terms
+    known_genes[i] = match(annotations[i, 1], genes[, 1])
+    
+    if (as.logical(annotations[i, 2] == ".")){
+      
+      genes[known_genes[i], 2] = annotations[i, 1]
+      annotations[i, 2] = annotations[i, 1] #this takes care of indexing problem later for GO terms
       } else {
-        genes[known_genes[i],2] <- annotations[i,2]
-        genes[known_genes[i],3] <- annotations[i,3]
-        genes[known_genes[i],4] <- annotations[i,5]
-        genes[known_genes[i],5] <- annotations[i,7]
+        genes[known_genes[i], 2] = annotations[i, 2]
+        genes[known_genes[i], 3] = annotations[i, 3]
+        genes[known_genes[i], 4] = annotations[i, 5]
+        genes[known_genes[i], 5] = annotations[i, 7]
       }
     }
   
   
   # load TFs
-  TF_NVE2 = read_excel("D:/Dropbox/Nematostella/documents/Genelists/tfs.xlsx")
+  TF_NVE2 = merge(TF_list, o, by.x = 'NVE', by.y = 'GeneId', all.x = T)
+  TF_NVE2 = TF_NVE2[!is.na(TF_NVE2$NV2Id), ]
+  TF_NVE2$NVE = TF_NVE2$NV2Id
+  TF_NVE2$NV2Id = NULL
+  
   # #convert TF list to "names" 
   known_TFs = vector("double", nrow(TF_NVE2))
   
   for (i in 1:nrow(TF_NVE2)){
-    known_TFs[i] = match(TF_NVE2$GeneId[i],genes[,1])
+    known_TFs[i] = match(TF_NVE2$NVE[i], genes[, 1])
   }
   
   TF_list = genes[known_TFs, ]
-  rm(TF_NVE2)
+  
   
   # generate some gene lists for filtering:
   cellcyclearrest.genes = grep(pattern = "cell cycle arrest", annotations$gene_ontology_pfam)
@@ -156,6 +125,7 @@ if (setup) {
   rm(Ribosomal.genes)
   
   save.image(file = '.RData')
+  
   #save workspace here and then just load '.RData' each time you start and skip the begining
 } else {
     load ('.RData')
@@ -170,66 +140,45 @@ raw = Read10X(data.dir = 'filtered_feature_bc_matrix/')
 lib1 = CreateSeuratObject(counts = raw, project = 'test')
 
 
-a = read.csv('filtered_feature_bc_matrix/features.tsv.gz', sep = '\t')
-b = read.csv('filtered_feature_bc_matrix/matrix.mtx.gz', sep = '\t')
-
-
-rownames(raw) = genes$gene_short_name
-
-length(genes$gene_short_name)
-length(row.names(raw))
-
-length(row.names(raw))
-
-
-
-
 if (PRE_ANALYSIS)
 {
   #direct to the matrix files of interest here.
-  raw.data1 <- Read10X(data.dir = getwd())
-  raw.data2 <- Read10X(data.dir = 'Z:/sequencing/Alison/Nematostella/TwistSequencing/ControlTissue_12000x2')
+  raw.data1 <- Read10X(data.dir = 'filtered_feature_bc_matrix/')
   
   # # set the gene names to the annotations
-  rownames(raw.data1) <- genes$gene_short_name
+  rownames(raw.data1) = genes$gene_short_name
   rownames(raw.data2) <- genes$gene_short_name
   
   #calculate mitochondrial fraction  
   percent.mito1 <- Matrix::colSums(raw.data1[mito_genes, ])/Matrix::colSums(raw.data1)
-  percent.mito2 <- Matrix::colSums(raw.data2[mito_genes, ])/Matrix::colSums(raw.data2)
   
   #generate Seurat object    
   lib1  <- CreateSeuratObject(counts = raw.data1, project = "TWISTtissuesMutant")
-  lib2  <- CreateSeuratObject(counts = raw.data2, project = "TWISTtissuesControl")
+  
   
   #add mitochondria information
   lib1[["percent.mt"]] <- PercentageFeatureSet(object = lib1, features = mito_genes)
-  lib2[["percent.mt"]] <- PercentageFeatureSet(object = lib2, features = mito_genes)
   
   #add library information
   levels(lib1@meta.data$orig.ident) <- 'TwistMutantTissue'
-  levels(lib2@meta.data$orig.ident) <- 'ControlTissue'
+  
   
   #filter the cells by genes detected 
   VlnPlot(object = lib1, features = c("nFeature_RNA", "nCount_RNA", "percent.mt"), ncol = 3, group.by = 'orig.ident')
   lib1 <- subset(x = lib1, subset = nFeature_RNA > 200 & nCount_RNA < 20000 & percent.mt < 6)
   
-  VlnPlot(object = lib2, features = c("nFeature_RNA", "nCount_RNA", "percent.mt"), ncol = 3, group.by = 'orig.ident')
-  lib2 <- subset(x = lib2, subset = nFeature_RNA > 200 & nCount_RNA < 20000 & percent.mt < 6)
   
   #add library info to names for later identification
   lib1 <- RenameCells(lib1, add.cell.id = "TwistMutantTissue")
-  lib2 <- RenameCells(lib2, add.cell.id = "TwistControlTissue")
   
   #Normalize
   lib1 <- NormalizeData(lib1, scale.factor = 5000)
-  lib2 <- NormalizeData(lib2, scale.factor = 5000)
   
   #merge two libraries  
-  data1 = merge(lib1, lib2,merge.data = T)
   
   lib1<-FindVariableFeatures(lib1)
   lib2<-FindVariableFeatures(lib2)
+  
   
   #generate CCA merge: this has changed
   # dataCCA<-RunCCA(lib1,lib2)
