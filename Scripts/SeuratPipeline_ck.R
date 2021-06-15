@@ -66,30 +66,38 @@ levels(lib2@meta.data$orig.ident) = 'Pharynx_Control'
 lib1 = subset(x = lib1, subset = nFeature_RNA > 200 & nCount_RNA < 20000 & percent.mt < 6)
 lib2 = subset(x = lib2, subset = nFeature_RNA > 200 & nCount_RNA < 20000 & percent.mt < 6)
   
-  #add library info to names for later identification
-  lib1 <- RenameCells(lib1, add.cell.id = "TwistMutantTissue")
-  lib2 <- RenameCells(lib2, add.cell.id = "TwistControlTissue")
+#' add library info to names for later identification
+lib1 = RenameCells(lib1, add.cell.id = "TwistMutantTissue")
+lib2 = RenameCells(lib2, add.cell.id = "TwistControlTissue")
   
-  #Normalize
-  lib1 <- NormalizeData(lib1, scale.factor = 5000)
-  lib2 <- NormalizeData(lib2, scale.factor = 5000)
+#' Normalize; the expression of every feature in every cell;
+#' We employ a global-scaling normalization method “LogNormalize” that normalizes 
+#' the feature expression measurements for each cell by the total expression, 
+#' multiplies this by a scale factor (5,000 by default), and log-transforms the result. 
+#' Normalized values are stored in lib[["RNA"]]@data
+lib1 = NormalizeData(lib1, scale.factor = 5000)
+lib2 = NormalizeData(lib2, scale.factor = 5000)
   
-  #merge two libraries  
-  data1 = merge(lib1, lib2,merge.data = T)
+#' merge two libraries  
+data1 = merge(lib1, lib2, merge.data = T)
+lib1 = FindVariableFeatures(lib1)
+lib2 = FindVariableFeatures(lib2)
+
+# TwistTissueMutant = lib1
+# TwistTissueControl = lib2
+# save (TwistTissueMutant, file = 'TwistMutantTissue.Robj')
+# save (TwistTissueControl, file = 'TwistControlTissue.Robj')
+# save (data1, file = 'TWISTTissueMerged.raw.Robj')
   
-  lib1<-FindVariableFeatures(lib1)
-  lib2<-FindVariableFeatures(lib2)
-  
-  #generate CCA merge: this has changed
-  # dataCCA<-RunCCA(lib1,lib2)
-  
-  #save your individual libraries so you don't have to do this again
-  TwistTissueMutant = lib1
-  TwistTissueControl = lib2
-  save (TwistTissueMutant, file = 'TwistMutantTissue.Robj')
-  save (TwistTissueControl, file = 'TwistControlTissue.Robj')
-  save (data1, file = 'TWISTTissueMerged.raw.Robj')
-  
-  #clean up the workspace  
-  rm (raw.data1, raw.data2, lib1, lib2)
-  
+plot1 = VariableFeaturePlot(lib1)
+top10 = head(VariableFeatures(lib1), 20)
+plot2 = LabelPoints(plot = plot1, points = top10, repel = TRUE, xnudge = 0, ynudge = 0)
+
+#' patchwork approach (package to arrange multiple plots)
+plot1 / plot2
+
+
+
+
+
+
