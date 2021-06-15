@@ -96,6 +96,10 @@ plot2 = LabelPoints(plot = plot1, points = top10, repel = TRUE, xnudge = 0, ynud
 #' patchwork approach (package to arrange multiple plots)
 plot1 / plot2
 
+
+##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+## ANALYSIS Part:
+#'
 #' Scaling the data (expression)
 #' We apply a linear transformation (‘scaling’) 
 #' that is a standard pre-processing step prior to dimensional reduction techniques like PCA. 
@@ -103,7 +107,94 @@ plot1 / plot2
 #' Scales the expression of each gene, so that the variance across cells is 1
 
 
+#' calculate variable genes:
+data1 = FindVariableFeatures(data1)
 
+#' scale the data
+data1 = ScaleData(data1, features = data1@assays$RNA@var.features,
+                   split.by = 'orig.ident') #this is important for batch effects
+
+#' PCA
+data1 = RunPCA(data1, pcs.compute = 50)
+ElbowPlot(object = data1, ndims = 50)
+d = 25 #choose appropriate dimensions from the graph
+
+#UMAP
+data1 = RunUMAP(data1, 
+                dims = 1:d,
+                n.neighbors = 10L, # how many similar cells do you expect
+                spread = 1, # how big is the axis space: 0.2 for lienages; 1 for separation
+                min.dist = 0.1, # how close to plot each cell higher=spread
+                local.connectivity = 100) # overall how connected is the graph
+
+#check that output is not based only on library or information content:
+library.plot = DimPlot(data1, 
+                       group.by = 'orig.ident',
+                       reduction = 'umap',
+                       label = F) + 
+  labs(title = 'Library | ID')
+
+
+feature.plot = FeaturePlot(data1,'nFeature_RNA', 
+                           cols = c('lightgrey','darkred')) +
+  NoAxes() + 
+  labs(title = 'nFeatures')
+
+library.plot+feature.plot
+
+FeaturePlot(data1,
+            c('NV2.10864'),#
+            cols =c('lightgrey',rev(brewer.pal(11 , "Spectral" ))),
+            order = T,)&NoAxes()&NoLegend()
+
+
+#' Clustering fo cells:
+data1 = FindNeighbors(object = data1,
+                      reduction ="pca",
+                      dims = 1:d,
+                      nn.method = 'annoy',  
+                      annoy.metric = 'cosine', 
+                      k.param = 20)
+
+clust.cp = unique (c(cols25(25),glasbey(32),alphabet2(26),alphabet(26)))
+#here you can calculate different clustering resolutions:  
+res = c(0.2, 0.4, 0.6, 0.8, 1, 1.2, 1.4, 1.6, 1.8, 2) 
+p = NULL
+for(i in 1:10){
+  data1 = FindClusters(object = data1,
+                       resolution = res[i],
+                       random.seed = 0)
+  p[[i]] = DimPlot(data1, 
+                   label = T,
+                   label.size = 5, 
+                   repel = T,
+                   cols = clust.cp) + 
+    NoLegend() + 
+    NoAxes() + 
+    labs(title = c(res[i],'Clusters | ID'))
+} 
+
+#can use clustree to image clustering stability:
+library(clustree)
+clustree::clustree(data1, prefix = "RNA_snn_res.")
+
+#choose your desired resolution:
+p[[1]]+p[[2]]+p[[4]]+p[[5]]
+
+data1 <- FindClusters(object = data1,resolution = 0.2,random.seed = 0)
+
+#calculate relationship between clusters; DISCUSS
+data1 <- BuildClusterTree(object = data1, reorder = TRUE,
+                          reorder.numeric = TRUE, dims = c(1:d))
+library.plot =DimPlot(data1, label = F,
+                      group.by = 'orig.ident')+NoAxes()+
+  labs(title = 'Library | ID')+NoLegend()
+cluster.plot =DimPlot(data1, label = T,label.size = 5, pt.size = 1,
+                      shape.by = 'orig.ident',
+                      repel = T,
+                      cols = clust.cp)+NoAxes()+
+  labs(title = 'Clusters | ID')+NoLegend()
+library.plot+cluster.plot
 
 
 
