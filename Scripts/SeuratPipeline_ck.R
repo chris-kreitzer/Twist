@@ -96,6 +96,12 @@ plot2 = LabelPoints(plot = plot1, points = top10, repel = TRUE, xnudge = 0, ynud
 #' patchwork approach (package to arrange multiple plots)
 plot1 / plot2
 
+#' Scaling the data (expression)
+#' We apply a linear transformation (‘scaling’) 
+#' that is a standard pre-processing step prior to dimensional reduction techniques like PCA. 
+#' The ScaleData function shifts the expression of each gene, so that the mean expression across cells is 0
+#' Scales the expression of each gene, so that the variance across cells is 1
+
 
 
 
