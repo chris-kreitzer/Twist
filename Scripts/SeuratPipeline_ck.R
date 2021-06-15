@@ -55,14 +55,16 @@ lib2[['percent.mt']] = PercentageFeatureSet(object = lib2, features = mitochondr
 #' add library information
 levels(lib1@meta.data$orig.ident) = 'Pharynx_Mutant'
 levels(lib2@meta.data$orig.ident) = 'Pharynx_Control'
-  
 
-#filter the cells by genes detected 
-  VlnPlot(object = lib1, features = c("nFeature_RNA", "nCount_RNA", "percent.mt"), ncol = 3, group.by = 'orig.ident')
-  lib1 <- subset(x = lib1, subset = nFeature_RNA > 200 & nCount_RNA < 20000 & percent.mt < 6)
-  
-  VlnPlot(object = lib2, features = c("nFeature_RNA", "nCount_RNA", "percent.mt"), ncol = 3, group.by = 'orig.ident')
-  lib2 <- subset(x = lib2, subset = nFeature_RNA > 200 & nCount_RNA < 20000 & percent.mt < 6)
+#' subset data based on some QC-metrics;
+#' cells with < 200 features (genes) are filtered
+#' cells with < 20,000 reads (nCountRNA) are filtered
+#' cells where the percentage mitochondrial genes > 5.99 are filtered
+
+# VlnPlot(object = lib1, features = c("nFeature_RNA", "nCount_RNA", "percent.mt"), ncol = 3, group.by = 'orig.ident')
+# VlnPlot(object = lib2, features = c("nFeature_RNA", "nCount_RNA", "percent.mt"), ncol = 3, group.by = 'orig.ident')
+lib1 = subset(x = lib1, subset = nFeature_RNA > 200 & nCount_RNA < 20000 & percent.mt < 6)
+lib2 = subset(x = lib2, subset = nFeature_RNA > 200 & nCount_RNA < 20000 & percent.mt < 6)
   
   #add library info to names for later identification
   lib1 <- RenameCells(lib1, add.cell.id = "TwistMutantTissue")
