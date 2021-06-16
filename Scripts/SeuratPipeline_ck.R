@@ -40,11 +40,33 @@ system('sshpass -p "chris2340" scp -r kreitzer@vlogin1.csb.univie.ac.at:/scratch
 ##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #' Pre-analysis: 
 #' Read in the data and create Seurat Object
-data.mutant = Read10X(data.dir = 'scRNA_tissue.pharynx.twistmutant/')
-data.control = Read10X(data.dir = 'scRNA_tissue.pharynx.twistcontrol/')
+data.control = Read10X(data.dir = 'scRNA_tissue.pharynx.twistmutant/')
+data.mutant = Read10X(data.dir = 'scRNA_tissue.pharynx.twistcontrol/')
 
-lib1 = CreateSeuratObject(counts = data.mutant, project = 'tissue.pharynx.mutant')
-lib2 = CreateSeuratObject(counts = data.control, project = 'tissue.pharynx.control')
+#' assign gene names rather than NV2.IDs
+lib1 = data.mutant
+lib2 = data.control
+
+for(i in 1:length(row.names(lib1))){
+  if(row.names(lib1)[i] %in% NV2_genes$NV2){
+    row.names(lib1)[i] = NV2_genes$gene_short_name[which(NV2_genes$NV2 == row.names(lib1)[i])]
+  } else {
+    next
+  }
+}
+
+#' second library:
+for(i in 1:length(row.names(lib2))){
+  if(row.names(lib2)[i] %in% NV2_genes$NV2){
+    row.names(lib2)[i] = NV2_genes$gene_short_name[which(NV2_genes$NV2 == row.names(lib2)[i])]
+  } else {
+    next
+  }
+}
+
+#' create Seurat object
+lib1 = CreateSeuratObject(counts = lib1, project = 'tissue.pharynx.mutant')
+lib2 = CreateSeuratObject(counts = lib2, project = 'tissue.pharynx.control')
 
 #' calculate the fraction of mitochondrial involvment; extensive reads mapping to mitochondrial features
 #' may indicate a dieing (apoptosis) cell;

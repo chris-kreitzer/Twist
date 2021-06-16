@@ -14,7 +14,7 @@ setwd('~/Documents/GitHub/Twist/')
 .rs.restartR()
 
 ## Input
-load('Scripts/RData')
+# load('Scripts/RData')
 Vienna_confident = read.csv('Data_out/vienna_nv2.confident.map', sep = '\t', header = F)
 colnames(Vienna_confident) = c('NVE', 'NV2')
 orthotable_juan = read.csv('Data_out/NV2_orthologe.table.tsv', sep = '\t')
@@ -203,38 +203,6 @@ save(NV2_annotation, NV2_genes, NV2_TF, cellcyclearrest, mitochondria, ribosomal
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+load('NV2_annotation')
 
