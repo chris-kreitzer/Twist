@@ -16,6 +16,7 @@ rm(list = ls())
 setwd('~/Documents/GitHub/Twist/')
 
 
+
 ## Libraries
 library(easypackages)
 library(Seurat)
@@ -40,8 +41,8 @@ system('sshpass -p "chris2340" scp -r kreitzer@vlogin1.csb.univie.ac.at:/scratch
 ##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #' Pre-analysis: 
 #' Read in the data and create Seurat Object
-data.control = Read10X(data.dir = 'scRNA_tissue.pharynx.twistmutant/')
 data.mutant = Read10X(data.dir = 'scRNA_tissue.pharynx.twistcontrol/')
+data.control = Read10X(data.dir = 'scRNA_tissue.pharynx.twistmutant/')
 
 #' assign gene names rather than NV2.IDs
 lib1 = data.mutant
@@ -55,6 +56,15 @@ for(i in 1:length(row.names(lib1))){
   }
 }
 
+#' there are non-unique entries in row.names(lib1):
+all.row.names = row.names(lib1)
+non.unique = row.names(lib1)[which(duplicated(row.names(lib1)))]
+
+for(i in 1:length(non.unique)){
+  duplicated.rownames = row.names(lib1)[which(row.names(lib1) == non.unique[i])]
+  row.names(lib1)[which(row.names(lib1) == non.unique[i])] = paste0(duplicated.rownames, '-', letters[1:length(duplicated.rownames)])
+}
+
 #' second library:
 for(i in 1:length(row.names(lib2))){
   if(row.names(lib2)[i] %in% NV2_genes$NV2){
@@ -63,6 +73,12 @@ for(i in 1:length(row.names(lib2))){
     next
   }
 }
+
+for(i in 1:length(non.unique)){
+  duplicated.rownames = row.names(lib2)[which(row.names(lib2) == non.unique[i])]
+  row.names(lib2)[which(row.names(lib2) == non.unique[i])] = paste0(duplicated.rownames, '-', letters[1:length(duplicated.rownames)])
+}
+
 
 #' create Seurat object
 lib1 = CreateSeuratObject(counts = lib1, project = 'tissue.pharynx.mutant')
