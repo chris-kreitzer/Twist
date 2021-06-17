@@ -86,9 +86,9 @@ lib2 = CreateSeuratObject(counts = lib2, project = 'tissue.pharynx.control')
 
 #' calculate the fraction of mitochondrial involvment; extensive reads mapping to mitochondrial features
 #' may indicate a dieing (apoptosis) cell;
-mitochondria_IDs = NV2_genes$NV2[which(mitochondria %in% NV2_genes$gene_short_name)]
-lib1[['percent.mt']] = PercentageFeatureSet(object = lib1, features = mitochondria_IDs)
-lib2[['percent.mt']] = PercentageFeatureSet(object = lib2, features = mitochondria_IDs)
+mitochondria = intersect(mitochondria, row.names(lib1))
+lib1[['percent.mt']] = PercentageFeatureSet(object = lib1, features = mitochondria)
+lib2[['percent.mt']] = PercentageFeatureSet(object = lib2, features = mitochondria)
 
 #' add library information
 levels(lib1@meta.data$orig.ident) = 'Pharynx_Mutant'
