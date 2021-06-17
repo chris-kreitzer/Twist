@@ -150,12 +150,13 @@ data1 = FindVariableFeatures(data1)
 
 #' scale the data
 data1 = ScaleData(data1, features = data1@assays$RNA@var.features,
-                   split.by = 'orig.ident') #this is important for batch effects
+                   split.by = 'orig.ident') # this is important for batch effects
+
 
 #' PCA
 data1 = RunPCA(data1, pcs.compute = 50)
 ElbowPlot(object = data1, ndims = 50)
-d = 25 #choose appropriate dimensions from the graph
+d = 25 # choose appropriate dimensions from the graph
 
 #UMAP
 data1 = RunUMAP(data1, 
@@ -170,7 +171,8 @@ library.plot = DimPlot(data1,
                        group.by = 'orig.ident',
                        reduction = 'umap',
                        label = F) + 
-  labs(title = 'Library | ID')
+  labs(title = 'Library | ID') +
+  NoAxes()
 
 
 feature.plot = FeaturePlot(data1,'nFeature_RNA', 
@@ -181,9 +183,10 @@ feature.plot = FeaturePlot(data1,'nFeature_RNA',
 library.plot+feature.plot
 
 FeaturePlot(data1,
-            c('NV2.10864'),#
-            cols =c('lightgrey',rev(brewer.pal(11 , "Spectral" ))),
-            order = T,)&NoAxes()&NoLegend()
+            c('NvTwist'),
+            cols = c('lightgrey', rev(brewer.pal(11 , "Spectral"))), order = T) & 
+  NoAxes() & 
+  NoLegend()
 
 
 #' Clustering fo cells:
@@ -194,7 +197,8 @@ data1 = FindNeighbors(object = data1,
                       annoy.metric = 'cosine', 
                       k.param = 20)
 
-clust.cp = unique (c(cols25(25),glasbey(32),alphabet2(26),alphabet(26)))
+clust.cp = unique(c(cols25(25), glasbey(32), alphabet2(26), alphabet(26)))
+
 #here you can calculate different clustering resolutions:  
 res = c(0.2, 0.4, 0.6, 0.8, 1, 1.2, 1.4, 1.6, 1.8, 2) 
 p = NULL
@@ -216,23 +220,121 @@ for(i in 1:10){
 library(clustree)
 clustree::clustree(data1, prefix = "RNA_snn_res.")
 
-#choose your desired resolution:
-p[[1]]+p[[2]]+p[[4]]+p[[5]]
+# choose your desired resolution:
+p[[1]] + p[[2]] + p[[4]] + p[[5]]
 
-data1 <- FindClusters(object = data1,resolution = 0.2,random.seed = 0)
+data1 = FindClusters(object = data1,
+                     resolution = 0.2,
+                     random.seed = 0)
+
 
 #calculate relationship between clusters; DISCUSS
-data1 <- BuildClusterTree(object = data1, reorder = TRUE,
-                          reorder.numeric = TRUE, dims = c(1:d))
-library.plot =DimPlot(data1, label = F,
-                      group.by = 'orig.ident')+NoAxes()+
-  labs(title = 'Library | ID')+NoLegend()
-cluster.plot =DimPlot(data1, label = T,label.size = 5, pt.size = 1,
-                      shape.by = 'orig.ident',
-                      repel = T,
-                      cols = clust.cp)+NoAxes()+
-  labs(title = 'Clusters | ID')+NoLegend()
-library.plot+cluster.plot
+data1 = BuildClusterTree(object = data1, 
+                         reorder = TRUE,
+                         reorder.numeric = TRUE, 
+                         dims = c(1:d))
+
+library.plot = DimPlot(data1, 
+                       label = F,
+                       group.by = 'orig.ident') + 
+  NoAxes() +
+  labs(title = 'Library | ID') + 
+  NoLegend()
+
+
+cluster.plot = DimPlot(data1, 
+                       label = T,
+                       label.size = 5, 
+                       pt.size = 1,
+                       shape.by = 'orig.ident',
+                       repel = T,
+                       cols = clust.cp) + 
+  NoAxes() + 
+  labs(title = 'Clusters | ID') + 
+  NoLegend()
+
+library.plot + cluster.plot
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+clust.cp = unique(c(cols25(25), glasbey(32), alphabet2(26), alphabet(26)))
+LibCP = c('grey', 'black')
+
+ids.cluster.library = as.data.frame(table(Idents(data1), data1@meta.data$orig.ident))
+colnames(ids.cluster.library) = c('ID', 'Library', 'CellCount')
+
+#generate plots:
+cluster.plot = DimPlot(data1, 
+                       label = F, 
+                       label.size = 5, 
+                       pt.size = 1,
+                       shape.by = 'orig.ident',
+                       repel = T,
+                       cols = clust.cp) +
+  NoAxes() + 
+  labs(title = 'Clusters | ID') + 
+  NoLegend()
+
+dist.clust2 = ggplot(ids.cluster.library, aes(x=as.integer(Library), y = CellCount, fill = ID)) + 
+  geom_area(position = "fill", stat = "identity", alpha = 0.4 , size = .5, colour = "white") +
+  geom_bar(position= "fill", stat = "identity", width = 0.5)+
+  scale_fill_manual(values = clust.cp)+
+  ggtitle("Distribution of cell types in time and space")
+
+#visualize your plots; can also do these individually as desired
+# library.plot+dist.lib+
+dist.clust2 + cluster.plot
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+all.markers_TF = FindAllMarkers(data1, 
+                                features = NV2_TF$gene_short_name,
+                                only.pos = TRUE, 
+                                min.cells.gene = 3,
+                                return.thresh = 0.001, 
+                                max.cells.per.ident = 500)
+  
+all.markers_variable = FindAllMarkers(data1,
+                                      logfc.threshold = 0.6,
+                                      features = data1@assays$RNA@var.features,
+                                      return.thresh = 0.001,
+                                      only.pos = TRUE, 
+                                      max.cells.per.ident = 500)
+  
+  all.markers <- FindAllMarkers(data1,logfc.threshold = 0.6,
+                                return.thresh = 0.001,
+                                only.pos = F, max.cells.per.ident = 500)
+  
+  #generate a collated list of unique DE genes
+  
+  list = NULL
+  for (i in 1:length(levels(data1@active.ident)))
+  {
+    x=all.markers_variable[as.numeric(all.markers_variable$cluster)==i,][1:min(10,length(which(as.numeric(all.markers_variable$cluster)==i))),7]
+    if (is.na (x) ==F)
+      list=c(list,x)
+  }
+  
+  #Image the list
+  DEG.variable= DotPlot(data1, features = unique(c(list)), 
+                        scale.by='size' , col.min = 0, col.max = 3,  
+                        cols = c('lightgrey','darkred')) + RotatedAxis() +
+    FontSize(6,6)+NoLegend()+coord_flip()
+  
+  #also for the TF list
+  list_TF = NULL
+  for (i in 1:length(levels(data1@active.ident)))
+  {
+    x=all.markers_TF[as.numeric(all.markers_TF$cluster)==i,][1:min(10,length(which(as.numeric(all.markers_TF$cluster)==i))),7]
+    if (is.na (x) ==F)
+      list_TF=c(list_TF,x)
+  }
+  DEG.TFs=DotPlot(data1, features = unique(c(list_TF,'NvTwist')), 
+                  scale.by='size' , col.min = 0, col.max = 3, 
+                  cols = c('lightgrey','darkred')) + RotatedAxis() +
+    FontSize(6,6)+NoLegend()+coord_flip()
+  
+  DEG.variable+DEG.TFs
+  
+}
 
 
 
