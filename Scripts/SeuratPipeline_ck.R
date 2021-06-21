@@ -99,10 +99,10 @@ levels(lib2@meta.data$orig.ident) = 'Pharynx_Control'
 #' cells with < 20,000 reads (nCountRNA) are filtered
 #' cells where the percentage mitochondrial genes > 5.99 are filtered
 
-# VlnPlot(object = lib1, features = c("nFeature_RNA", "nCount_RNA", "percent.mt"), ncol = 3, group.by = 'orig.ident')
-# VlnPlot(object = lib2, features = c("nFeature_RNA", "nCount_RNA", "percent.mt"), ncol = 3, group.by = 'orig.ident')
-lib1 = subset(x = lib1, subset = nFeature_RNA > 200 & nCount_RNA < 20000 & percent.mt < 6)
-lib2 = subset(x = lib2, subset = nFeature_RNA > 200 & nCount_RNA < 20000 & percent.mt < 6)
+VlnPlot(object = lib1, features = c("nFeature_RNA", "nCount_RNA", "percent.mt"), ncol = 3, group.by = 'orig.ident')
+VlnPlot(object = lib2, features = c("nFeature_RNA", "nCount_RNA", "percent.mt"), ncol = 3, group.by = 'orig.ident')
+lib1 = subset(x = lib1, subset = nFeature_RNA > 250 & nCount_RNA < 20000 & percent.mt < 6)
+lib2 = subset(x = lib2, subset = nFeature_RNA > 250 & nCount_RNA < 20000 & percent.mt < 6)
   
 #' add library info to names for later identification
 lib1 = RenameCells(lib1, add.cell.id = "TwistMutantTissue")
@@ -156,7 +156,7 @@ data1 = ScaleData(data1, features = data1@assays$RNA@var.features,
 #' PCA
 data1 = RunPCA(data1, pcs.compute = 50)
 ElbowPlot(object = data1, ndims = 50)
-d = 25 # choose appropriate dimensions from the graph
+d = 18 # choose appropriate dimensions from the graph
 
 #UMAP
 data1 = RunUMAP(data1, 
@@ -175,18 +175,23 @@ library.plot = DimPlot(data1,
   NoAxes()
 
 
-feature.plot = FeaturePlot(data1,'nFeature_RNA', 
+feature.plot = FeaturePlot(data1,
+                           'nFeature_RNA', 
                            cols = c('lightgrey','darkred')) +
   NoAxes() + 
   labs(title = 'nFeatures')
 
 library.plot+feature.plot
 
+
 FeaturePlot(data1,
             c('NvTwist'),
-            cols = c('lightgrey', rev(brewer.pal(11 , "Spectral"))), order = T) & 
-  NoAxes() & 
-  NoLegend()
+            shape.by = NULL,
+            #label = T,
+            cols = c('lightgrey', 
+                     rev(brewer.pal(11 , "Spectral"))), order = T, split.by = 'orig.ident') & 
+  NoAxes()
+  
 
 
 #' Clustering to cells:
@@ -214,7 +219,10 @@ for(i in 1:10){
     NoLegend() + 
     NoAxes() + 
     labs(title = c(res[i], 'Clusters | ID'))
-} 
+}
+
+p[[8]]
+
 
 #can use clustree to image clustering stability:
 library(clustree)
@@ -224,7 +232,7 @@ clustree::clustree(data1, prefix = "RNA_snn_res.")
 p[[1]] + p[[2]] + p[[4]] + p[[5]]
 
 data1 = FindClusters(object = data1,
-                     resolution = 0.2,
+                     resolution = 0.8,
                      random.seed = 0)
 
 
@@ -238,8 +246,7 @@ library.plot = DimPlot(data1,
                        label = F,
                        group.by = 'orig.ident') + 
   NoAxes() +
-  labs(title = 'Library | ID') + 
-  NoLegend()
+  labs(title = 'Library | ID')
 
 
 cluster.plot = DimPlot(data1, 
@@ -271,12 +278,11 @@ cluster.plot = DimPlot(data1,
                        repel = T,
                        cols = clust.cp) +
   NoAxes() + 
-  labs(title = 'Clusters | ID') + 
-  NoLegend()
+  labs(title = 'Clusters | ID')
 
 dist.clust2 = ggplot(ids.cluster.library, aes(x=as.integer(Library), y = CellCount, fill = ID)) + 
-  geom_area(position = "fill", stat = "identity", alpha = 0.4 , size = .5, colour = "white") +
-  geom_bar(position= "fill", stat = "identity", width = 0.5)+
+  geom_area(position = "stack", stat = "identity", alpha = 0.4 , size = .5, colour = "white") +
+  geom_bar(position= "stack", stat = "identity", width = 0.5)+
   scale_fill_manual(values = clust.cp)+
   ggtitle("Distribution of cell types in time and space")
 
