@@ -189,9 +189,9 @@ FeaturePlot(data1,
   NoLegend()
 
 
-#' Clustering fo cells:
+#' Clustering to cells:
 data1 = FindNeighbors(object = data1,
-                      reduction ="pca",
+                      reduction = "pca",
                       dims = 1:d,
                       nn.method = 'annoy',  
                       annoy.metric = 'cosine', 
@@ -213,7 +213,7 @@ for(i in 1:10){
                    cols = clust.cp) + 
     NoLegend() + 
     NoAxes() + 
-    labs(title = c(res[i],'Clusters | ID'))
+    labs(title = c(res[i], 'Clusters | ID'))
 } 
 
 #can use clustree to image clustering stability:
