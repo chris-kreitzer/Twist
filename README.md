@@ -62,7 +62,30 @@ From this point of view, we will consider NV2.10979 and obviously *twist* in the
 - how is the expression changing - different from wild-types to mutants;   
 
 
-Before, I move on to scRNA libraries (data), I will define a GOI - differentially expressed in the mutants and wild-types. This set of genes should serve as a sanity check, whether we see the same pattern in scRNA data. 
+Before, I move on to scRNA libraries (data), I will define a GOI - differentially expressed in the mutants and wild-types. This set of genes should serve as a sanity check, whether we see the same pattern in scRNA data.   
+
+
+## scRNA analysis with Seurat:    
+#### Background:   
+We have used cellranger to map the RNA reads to the reference genome and obtained a count-matrix per cell. Individual cells are captures in the cellranger output, through ***unique*** Barcode sequences (UMI's). This means, Seurat uses a count-matrix, where columns represent unique DNA-Sequences (UMI's = cells) and rows are features (in the provided annotation table we have roughly 20,000 features for Nematostella). For every cell and feature we have a count (produced by cellranger; and will be loaded in Seurat.   
+#### Workflow Seurat:   
+First we look into features (per cell), RNA counts and percentage MT. These metrics are used as a quality measure. Cells where the the feature count is below 250 are discarded (not informative) and cells with RNA-counts >20,000 are equally discarded - as this may be indicative of a duplicate cell sequenced (two cells in 10X rather than a single Transcriptome). We filter out those cells, apply a normalization and scaling approach `scale_factor = 5,000` [Alison's suggestion]. 
+We then merge the two libraries (Mutant and Control) and define a list of highly variable genes (by default, Seurat uses `vst` AND `nfeatures = 2000`).  
+We then run a PCA `runPCA` (first dimision reduction). Every dot basically represents a cell with it's transcriptome. This means, with `runPCA` we take the 2,000 variable features (among cells) and cluster cells (dimension reduced) with similar transcriptomic profiles [runPCA example](https://github.com/chris-kreitzer/Twist/blob/main/Figures/Pharynx_PCAs_2000features.pdf).   
+What we can clearly see from the plot:   
+- the overall transcriptome (single cells) from both the mutants and the the control are very much comparable   
+- There are some spatial structures (in which the arrangement of clusters doesn't play an important role; just that several **distinct** clusters exist).   
+- What's really interesting is, that one particular cell cluster stands out in the mutant library (pharynx_mutant);   
+- now it's time to take a closer look into this distinct cell cluster; to see where those cells (with its transcriptome belong to, or which identity those cells show)   
+#### Look into a specific feature (***NvTwist***) among the two libraries, and see spatial expression (normalized) in the data / cell-identities.   
+[quantitative (normalized) NvTwist expression among cell clusters](https://github.com/chris-kreitzer/Twist/blob/main/Figures/NvTwist_expression%20among%20tissues.pdf). You can see that NvTwist is expressed in both libraries (at a varying degree). However, consider the different density. It seems like that NvTwist is more expressed in controls and in mutant libraries (especially, the left corner).   
+
+#### Cluster cells - important parameter: resolution: The higher the resolution, the more clusters will be formed (and vice versa).   
+`Constructs a Shared Nearest Neighbor (SNN) Graph for a given dataset`.   
+[How to select the resolution](https://github.com/chris-kreitzer/Twist/blob/main/Figures/Clustering_Resolution_clusttree.pdf). You see we start off with 14 clusters; Looking into the top-row, we see that at **low resolution** we have direct trajectories. However, there is one cell-identity lineage which does not change at any resolution, meaning that **9** stays very much the same and show distinct features. Whereas cluster 0 gets a little bit blurry and splits in many smaller clusters (at higher resolution). Looking at low-level plots (getting sense of data); a low resolution is good to go. However, we are interested in getting the most discinct clusters - just looking @this [plot](https://github.com/chris-kreitzer/Twist/blob/main/Figures/Clustering_Resolution_clusttree.pdf), we are choosing `resolution = 0.8`, because there we are keeping the most sensitiviy and structure. 
+
+#### Visualizing the Cluster's) - UMAP (based on clustering): BuildClusterTree: Phylogenetic Analysis of Identity Classes:   
+
 
 
 ## Background:
