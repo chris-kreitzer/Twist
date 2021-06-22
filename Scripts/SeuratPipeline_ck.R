@@ -19,7 +19,9 @@ setwd('~/Documents/GitHub/Twist/')
 
 ## Libraries
 library(easypackages)
+library(clustree)
 library(Seurat)
+library(cowplot)
 libraries("Seurat", 
           "Matrix", 
           "readxl",
@@ -118,8 +120,7 @@ lib2 = NormalizeData(lib2, scale.factor = 5000)
   
 #' merge two libraries  
 data1 = merge(lib1, lib2, merge.data = T)
-lib1 = FindVariableFeatures(lib1)
-lib2 = FindVariableFeatures(lib2)
+
 
 # TwistTissueMutant = lib1
 # TwistTissueControl = lib2
@@ -158,7 +159,7 @@ data1 = RunPCA(data1, pcs.compute = 50)
 ElbowPlot(object = data1, ndims = 50)
 d = 18 # choose appropriate dimensions from the graph
 
-#UMAP
+#' UMAP reduction (just for visualization)
 data1 = RunUMAP(data1, 
                 dims = 1:d,
                 n.neighbors = 10L, # how many similar cells do you expect
@@ -166,7 +167,8 @@ data1 = RunUMAP(data1,
                 min.dist = 0.1, # how close to plot each cell higher=spread
                 local.connectivity = 100) # overall how connected is the graph
 
-#check that output is not based only on library or information content:
+
+#' Library plot:L shows the overall structure of both libraries; mutant and control
 library.plot = DimPlot(data1, 
                        group.by = 'orig.ident',
                        reduction = 'umap',
@@ -183,7 +185,7 @@ feature.plot = FeaturePlot(data1,
 
 library.plot+feature.plot
 
-
+#' you can also highlight specific GOI in clustered tissue
 FeaturePlot(data1,
             c('NvTwist'),
             shape.by = NULL,
@@ -204,7 +206,7 @@ data1 = FindNeighbors(object = data1,
 
 clust.cp = unique(c(cols25(25), glasbey(32), alphabet2(26), alphabet(26)))
 
-#here you can calculate different clustering resolutions:  
+# here you can calculate different clustering resolutions:  
 res = c(0.2, 0.4, 0.6, 0.8, 1, 1.2, 1.4, 1.6, 1.8, 2) 
 p = NULL
 for(i in 1:10){
@@ -221,22 +223,18 @@ for(i in 1:10){
     labs(title = c(res[i], 'Clusters | ID'))
 }
 
-p[[8]]
 
 
-#can use clustree to image clustering stability:
-library(clustree)
+#' use clustree to image clustering stability ~ branching pattern
 clustree::clustree(data1, prefix = "RNA_snn_res.")
 
-# choose your desired resolution:
-p[[1]] + p[[2]] + p[[4]] + p[[5]]
-
+#' run again with final selected resolution
 data1 = FindClusters(object = data1,
                      resolution = 0.8,
                      random.seed = 0)
 
 
-#calculate relationship between clusters; DISCUSS
+#' calculate relationship between clusters; DISCUSS
 data1 = BuildClusterTree(object = data1, 
                          reorder = TRUE,
                          reorder.numeric = TRUE, 
@@ -262,6 +260,7 @@ cluster.plot = DimPlot(data1,
 
 library.plot + cluster.plot
 
+
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 clust.cp = unique(c(cols25(25), glasbey(32), alphabet2(26), alphabet(26)))
 LibCP = c('grey', 'black')
@@ -269,26 +268,39 @@ LibCP = c('grey', 'black')
 ids.cluster.library = as.data.frame(table(Idents(data1), data1@meta.data$orig.ident))
 colnames(ids.cluster.library) = c('ID', 'Library', 'CellCount')
 
-#generate plots:
-cluster.plot = DimPlot(data1, 
-                       label = F, 
-                       label.size = 5, 
-                       pt.size = 1,
-                       shape.by = 'orig.ident',
-                       repel = T,
-                       cols = clust.cp) +
-  NoAxes() + 
-  labs(title = 'Clusters | ID')
-
-dist.clust2 = ggplot(ids.cluster.library, aes(x=as.integer(Library), y = CellCount, fill = ID)) + 
-  geom_area(position = "stack", stat = "identity", alpha = 0.4 , size = .5, colour = "white") +
-  geom_bar(position= "stack", stat = "identity", width = 0.5)+
-  scale_fill_manual(values = clust.cp)+
+#' plot which compares the cell frequency in the Control and Mutant Library. 
+#' How many cells belong to which cluster; and which cluster is obviously different
+dist.clust2 = ggplot(ids.cluster.library, 
+                     aes(x = Library, 
+                         y = CellCount, 
+                         fill = ID)) + 
+  geom_area(position = "fill", 
+            stat = "identity", 
+            alpha = 0.4 , 
+            size = .95, 
+            colour = "white") +
+  geom_bar(position = "fill", 
+           stat = "identity", 
+           width = 0.85) +
+  scale_fill_manual(values = clust.cp) +
+  scale_x_discrete(expand = c(0.5, 0)) +
+  scale_y_continuous(expand = c(0.0, 0.0)) +
+  theme_cowplot() +
+  labs(x = '', y = 'relative fraction') +
   ggtitle("Distribution of cell types in time and space")
 
-#visualize your plots; can also do these individually as desired
-# library.plot+dist.lib+
-dist.clust2 + cluster.plot
+dist.clust2
+
+
+alabels = c(
+  "Fair" = "F",
+  "Good" = "G",
+  "Very Good" = "VG",
+  "Perfect" = "P",
+  "Ideal" = "I"
+
+
+
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 all.markers_TF = FindAllMarkers(data1, 
