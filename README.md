@@ -86,7 +86,7 @@ What we can clearly see from the plot:
 
 #### Visualizing the Cluster's) - UMAP (based on clustering): BuildClusterTree: Phylogenetic Analysis of Identity Classes:   
 When we look into the reduced and clustered ID's [Figure](https://github.com/chris-kreitzer/Twist/blob/main/Figures/Clusters_UMAP_reduced.pdf) we can clearly see that there are two features which distiguish the mutants from the controls. Firstly, we have a cell cluster **20**(turquois) which is apparent in the mutants and missing in the the controls.   
-Secondly, we can also see that cell cluster **13** may be of interest, as this cluster is enriched for **NvTwist** in the control and largely missing in the mutants. At least, **NvTwist** is lower expressed in the mutant library at this cluster. We can also see that the overall clustering pattern looks 'clean' in the sense, that there is little dispersion of different cell-identities with other clusters. Apart from **23 AND 24**. 
+Secondly, we can also see that cell cluster **13** may be of interest, as this cluster is enriched for **NvTwist** in the control and largely missing in the mutants. At least, **NvTwist** is lower expressed in the mutant library at this cluster. We can also see that the overall clustering pattern looks 'clean' in the sense, that there is little dispersion of different cell-identities with other clusters. Apart from **23 AND 24**. Look also at this [Figure](https://github.com/chris-kreitzer/Twist/blob/main/Figures/CellType%20Distribution%20among%20Libraries.pdf). There you can clearly see that cluster **20** seems to exclusively be just available at the mutant library where it is missing in the control.  
 
 
 
