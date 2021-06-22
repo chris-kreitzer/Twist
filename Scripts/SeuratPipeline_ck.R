@@ -292,16 +292,6 @@ dist.clust2 = ggplot(ids.cluster.library,
 dist.clust2
 
 
-alabels = c(
-  "Fair" = "F",
-  "Good" = "G",
-  "Very Good" = "VG",
-  "Perfect" = "P",
-  "Ideal" = "I"
-
-
-
-
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 all.markers_TF = FindAllMarkers(data1, 
                                 features = NV2_TF$gene_short_name,
