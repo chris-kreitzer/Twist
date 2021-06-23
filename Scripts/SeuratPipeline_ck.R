@@ -293,40 +293,70 @@ dist.clust2
 
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#' find differentially expressed Transcription factors among the clusters;
+#' unfortunately, we need to restrict the full TF-list (n=923) down to n=616, because
+#' the row.names of the features (in data1) must match with gene_short_name from `features to test`
+TF_2_test = unique(intersect(row.names(data1), NV2_TF$gene_short_name))
+
+#' concentrating on TF-first
 all.markers_TF = FindAllMarkers(data1, 
-                                features = NV2_TF$gene_short_name,
+                                features = TF_2_test,
                                 only.pos = TRUE, 
                                 min.cells.gene = 3,
                                 return.thresh = 0.001, 
                                 max.cells.per.ident = 500)
-  
+
+write.table(x = all.markers_TF, file = 'Data_out/Seurat_TF_markers.txt', sep = '\t', row.names = F, quote = F)
+
+
+#' concentrate on features which are variable among the libraries
 all.markers_variable = FindAllMarkers(data1,
                                       logfc.threshold = 0.6,
                                       features = data1@assays$RNA@var.features,
                                       return.thresh = 0.001,
                                       only.pos = TRUE, 
                                       max.cells.per.ident = 500)
+
+#' everything combined:
+all.markers = FindAllMarkers(data1,
+                             logfc.threshold = 0.6,
+                             return.thresh = 0.001,
+                             only.pos = F, 
+                             max.cells.per.ident = 500)
   
-  all.markers <- FindAllMarkers(data1,logfc.threshold = 0.6,
-                                return.thresh = 0.001,
-                                only.pos = F, max.cells.per.ident = 500)
+
+
+#' generate a collated list of unique DE genes
+#' active.ident = the number of clusters Seurat has generated (in our case we have 24);
+#' with the below function we extract the top 10 genes which are most significant and extract just the gene names
   
-  #generate a collated list of unique DE genes
+list = NULL
+for (i in 1:length(levels(data1@active.ident))){
+  x = all.markers_variable[as.numeric(all.markers_variable$cluster) == i, ][1 : min(10, length(which(as.numeric(all.markers_variable$cluster) == i))), 7]
   
-  list = NULL
-  for (i in 1:length(levels(data1@active.ident)))
-  {
-    x=all.markers_variable[as.numeric(all.markers_variable$cluster)==i,][1:min(10,length(which(as.numeric(all.markers_variable$cluster)==i))),7]
-    if (is.na (x) ==F)
-      list=c(list,x)
+  if (is.na(x) == F)
+      list = c(list, x)
   }
   
-  #Image the list
-  DEG.variable= DotPlot(data1, features = unique(c(list)), 
-                        scale.by='size' , col.min = 0, col.max = 3,  
-                        cols = c('lightgrey','darkred')) + RotatedAxis() +
-    FontSize(6,6)+NoLegend()+coord_flip()
+
+#' make a plot
+#' Intuitive way of visualizing how feature expression changes across different 
+#' identity classes (clusters). 
+#' The size of the dot encodes the percentage of cells within a class, 
+#' while the color encodes the AverageExpression level across all cells 
+#' within a class (blue is high).
+DEG.variable = DotPlot(data1, 
+                       features = unique(c(list)), 
+                       scale.by = 'size', 
+                       col.min = 0, 
+                       col.max = 3,  
+                       cols = c('lightgrey','darkred')) + 
+  RotatedAxis() +
+  FontSize(6, 6) +
+  NoLegend() + 
+  coord_flip()
   
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   #also for the TF list
   list_TF = NULL
   for (i in 1:length(levels(data1@active.ident)))
