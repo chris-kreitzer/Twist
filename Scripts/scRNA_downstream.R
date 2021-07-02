@@ -64,6 +64,17 @@ NvNcol6
 
 
 
+## further:
+#' look cell cluster identity; assign cell types
+#' look into different features, across different conditions (mutant and wild-type)
+#' work still on cluster 20 and 13
+#' look if tentacle identity
+
+
+
+
+
+
 
 
 
