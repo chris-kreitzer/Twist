@@ -23,47 +23,49 @@ cluster20 = FindMarkers(data1,
 
 write.table(x = cluster20, file = 'Data_out/ConservedMarkers_CellCluster20_mutant.txt', row.names = T, sep = '\t')
 
-markers = FindMarkers(data1, 
+
+#' finding markers which distinguish the both libraries.
+markers = FindMarkers(data1,
+                      min.pct = 0.45,
+                      logfc.threshold = 1,
                       ident.1 = 'Pharynx_Mutant', 
+                      ident.2 = 'Pharynx_Control',
                       group.by = 'orig.ident', 
                       subset.ident = '20')
-View(markers)
 
 
-#' DESeq of Cluster 20
-# cluster20.DESeq = FindMarkers(data1,
-#                               ident.1 = 20,
-#                               min.pct = 0.25,
-#                               logfc.threshold = 0.25,
-#                               slot = 'counts',
-#                               test.use = 'DESeq2')
+#' features which are depleted and enriched in either mutant or wt animals;
+#' when concentrating on cell-cluster 20
+GOI.20 = row.names(markers)
 
-
-
-#' enriched features in cluster 20
-#' here concentrating on NvNcol6
-NvNcol6 = VlnPlot(data1, features = c('NvNcol6'),
-                  split.by = 'orig.ident', 
-                  split.plot = T) +
-  RestoreLegend(position = "right") +
-  labs(x = 'Cell-cluster identity') +
-  scale_y_continuous(expand = c(0,0)) +
-  theme(aspect.ratio = 0.5,
-        axis.line = element_line(size = 0.9),
-        axis.text = element_text(size = 14),
-        axis.title = element_text(size = 16, face = 'bold'),
-        legend.position = c(0.05, 0.9)) +
-  scale_fill_manual(values = c('Pharynx_Control' = '#CD9B06', 
-                                'Pharynx_Mutant' = '#4A265A')) +
-  panel_border(color = 'black', size = 1.2)
+plot_list = list()
+for(i in unique(GOI.20)){
+  plot = VlnPlot(data1, 
+                 features = i,
+                 split.by = 'orig.ident', 
+                 split.plot = T) +
+    RestoreLegend(position = "right") +
+    labs(x = 'Cell-cluster identity') +
+    scale_y_continuous(expand = c(0,0)) +
+    theme(aspect.ratio = 0.5,
+          axis.line = element_line(size = 0.9),
+          axis.text = element_text(size = 14),
+          axis.title = element_text(size = 16, face = 'bold'),
+          legend.position = c(0.05, 0.9)) +
+    scale_fill_manual(values = c('Pharynx_Control' = '#CD9B06', 
+                                 'Pharynx_Mutant' = '#4A265A')) +
+    panel_border(color = 'black', size = 1.2)
   
+  plot_list[[i]] = plot
+  
+}
+  
+upregulated = plot_list$NvNcol6 | plot_list$NVE8163 | plot_list$`RS19-like-a`
+downregulated = plot_list$`FRIS-like5;FRIS-like7` | plot_list$`BAG4-like1` | plot_list$`ASGL1-like3-b`
 
-NvNcol6
 
-#' further upregulated gene
-'NvNEP3-b'
-#' downregulated gene
-'ASGL1-like3-b' 'BAG4-like1'
+upregulated / downregulated
+
 
 # VlnPlot(data1, features = c('ASGL1-like3-b'),
 #         split.by = 'orig.ident', 
