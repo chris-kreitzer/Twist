@@ -101,8 +101,8 @@ levels(lib2@meta.data$orig.ident) = 'Pharynx_Control'
 #' cells with < 20,000 reads (nCountRNA) are filtered
 #' cells where the percentage mitochondrial genes > 5.99 are filtered
 
-VlnPlot(object = lib1, features = c("nFeature_RNA", "nCount_RNA", "percent.mt"), ncol = 3, group.by = 'orig.ident')
-VlnPlot(object = lib2, features = c("nFeature_RNA", "nCount_RNA", "percent.mt"), ncol = 3, group.by = 'orig.ident')
+# VlnPlot(object = lib1, features = c("nFeature_RNA", "nCount_RNA", "percent.mt"), ncol = 3, group.by = 'orig.ident')
+# VlnPlot(object = lib2, features = c("nFeature_RNA", "nCount_RNA", "percent.mt"), ncol = 3, group.by = 'orig.ident')
 lib1 = subset(x = lib1, subset = nFeature_RNA > 250 & nCount_RNA < 20000 & percent.mt < 6)
 lib2 = subset(x = lib2, subset = nFeature_RNA > 250 & nCount_RNA < 20000 & percent.mt < 6)
   
