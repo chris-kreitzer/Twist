@@ -22,6 +22,11 @@ library(easypackages)
 library(clustree)
 library(Seurat)
 library(cowplot)
+
+install.packages('BiocManager')
+BiocManager::install('multtest')
+install.packages('metap')
+library(metap)
 libraries("Seurat", 
           "Matrix", 
           "readxl",
