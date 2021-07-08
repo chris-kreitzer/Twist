@@ -22,6 +22,7 @@ library(easypackages)
 library(clustree)
 library(Seurat)
 library(cowplot)
+library(viridis)
 
 install.packages('BiocManager')
 BiocManager::install('multtest')
@@ -326,13 +327,13 @@ all.markers_TF = FindAllMarkers(data1,
 write.table(x = all.markers_TF, file = 'Data_out/Seurat_TF_markers.txt', sep = '\t', row.names = F, quote = F)
 
 
-#' concentrate on features which are variable among the libraries
-all.markers_variable = FindAllMarkers(data1,
-                                      logfc.threshold = 0.6,
-                                      features = data1@assays$RNA@var.features,
-                                      return.thresh = 0.001,
-                                      only.pos = TRUE, 
-                                      max.cells.per.ident = 500)
+#' #' concentrate on features which are variable among the libraries
+#' all.markers_variable = FindAllMarkers(data1,
+#'                                       logfc.threshold = 0.6,
+#'                                       features = data1@assays$RNA@var.features,
+#'                                       return.thresh = 0.001,
+#'                                       only.pos = TRUE, 
+#'                                       max.cells.per.ident = 500)
 
 #' everything combined:
 all.markers = FindAllMarkers(data1,
@@ -345,17 +346,23 @@ all.markers = FindAllMarkers(data1,
 
 #' generate a collated list of unique DE genes
 #' active.ident = the number of clusters Seurat has generated (in our case we have 24);
-#' with the below function we extract the top 10 genes which are most significant and extract just the gene names
+#' with the below function we extract the top 10 genes (marker gene) for each cluster;
+#' use this list to identify cell-identity
   
-gene_list = NULL
-for (i in 1:length(levels(data1@active.ident))){
-  x = all.markers[as.numeric(all.markers$cluster) == i, ][1 : min(10, length(which(as.numeric(all.markers_variable$cluster) == i))), 7]
+marker_gene_list = data.frame()
+for(i in 1:length(levels(data1@active.ident))){
+  x = all.markers[which(all.markers$cluster == i), ]
+  x = x[order(x$avg_log2FC, decreasing = T), ]
   
-  if (is.na(x) == F){
-    gene_list = c(gene_list, x)
+  if(nrow(x) >= 10){
+    top10_marker = x[1:10, c('avg_log2FC', 'cluster', 'gene')]
+  } else {
+    top10_marker = x[, c('avg_log2FC', 'cluster', 'gene')]
   }
+  marker_gene_list = rbind(marker_gene_list, top10_marker)
 }
-  
+
+write.table(x = marker_gene_list, file = 'Data_out/Marker.GeneList.Clusters.txt', sep = '\t', row.names = F, quote = F)
 
 #' make a plot
 #' Intuitive way of visualizing how feature expression changes across different 
@@ -363,34 +370,52 @@ for (i in 1:length(levels(data1@active.ident))){
 #' The size of the dot encodes the percentage of cells within a class, 
 #' while the color encodes the AverageExpression level across all cells 
 #' within a class (blue is high).
+#' 
+#' exclude one feature because of the long name:
+markers2plot = unique(marker_gene_list$gene)
+markers2plot = markers2plot[!markers2plot %in% 'NVE17534;UROM-like5;GP2-like20;UROM-like9;GP2-like21;UROM-like10;GP2-like32;OIT3-like11;GP2-like30;GP2-like26;GP2-like3;OIT3-like14']
+
+#' make the plot
 DEG.variable = DotPlot(data1, 
-                       features = unique(c(list)), 
-                       scale.by = 'size', 
+                       features = markers2plot,
                        col.min = 0, 
-                       col.max = 3,  
-                       cols = c('lightgrey','darkred')) + 
-  RotatedAxis() +
-  FontSize(6, 6) +
-  NoLegend() + 
-  coord_flip()
-  
-# #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-#   #also for the TF list
-#   list_TF = NULL
-#   for (i in 1:length(levels(data1@active.ident)))
-#   {
-#     x=all.markers_TF[as.numeric(all.markers_TF$cluster)==i,][1:min(10,length(which(as.numeric(all.markers_TF$cluster)==i))),7]
-#     if (is.na (x) ==F)
-#       list_TF=c(list_TF,x)
-#   }
-#   DEG.TFs=DotPlot(data1, features = unique(c(list_TF,'NvTwist')), 
-#                   scale.by='size' , col.min = 0, col.max = 3, 
-#                   cols = c('lightgrey','darkred')) + RotatedAxis() +
-#     FontSize(6,6)+NoLegend()+coord_flip()
-#   
-#   DEG.variable+DEG.TFs
-#   
-# }
+                       col.max = 3, 
+                       dot.min = 0.2,
+                       scale.by = 'size',
+                       dot.scale = 3,
+                       cols = rev(viridis::viridis(2))) +
+  coord_flip() +
+  FontSize(x.text = 12, y.text = 6, x.title = 12, y.title = 12, main = 'Clusters') +
+  theme(aspect.ratio = 1,
+        legend.position = 'top') +
+  guides(color = guide_colorbar(title = 'Average Expression',
+                                title.vjust = 1,
+                                title.position = 'top',
+                                barwidth = 6,
+                                barheight = 0.5,
+                                ticks = F),
+         size = guide_legend(title = 'Cells (%) with feature expression',
+                             title.position = 'top'))
+                       
+
+DEG.variable
+
+
+#' look into specific cluster and split by orig.ident to see the difference in genotype
+DEG.variable_cluster20 = DotPlot(data1, 
+                       features = unique(marker_gene_list$gene),
+                       col.min = 0, 
+                       col.max = 3, 
+                       dot.min = 0.2,
+                       split.by = 'orig.ident')
+
+DEG.variable
+
+
+
+
+
+
 
 
 
