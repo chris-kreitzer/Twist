@@ -296,6 +296,14 @@ dist.clust2 = ggplot(ids.cluster.library,
 
 dist.clust2
 
+#' different visualization
+cell.counts = ggplot(ids.cluster.library, aes(x = ID, y = CellCount, fill = Library)) +
+  geom_bar(position="dodge", stat="identity") + theme_cowplot() + 
+  scale_y_continuous(expand = c(0, 0))
+  
+
+cell.counts
+
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #' find differentially expressed Transcription factors among the clusters;
@@ -307,6 +315,9 @@ TF_2_test = unique(intersect(row.names(data1), NV2_TF$gene_short_name))
 all.markers_TF = FindAllMarkers(data1, 
                                 features = TF_2_test,
                                 only.pos = TRUE, 
+                                logfc.threshold = 0.5,
+                                min.pct = 0.25,
+                                min.diff.pct = 0.2,
                                 min.cells.gene = 3,
                                 return.thresh = 0.001, 
                                 max.cells.per.ident = 500)
