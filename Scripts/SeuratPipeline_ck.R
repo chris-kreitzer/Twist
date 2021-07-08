@@ -320,6 +320,7 @@ all.markers_TF = FindAllMarkers(data1,
                                 min.diff.pct = 0.2,
                                 min.cells.gene = 3,
                                 return.thresh = 0.001, 
+                                grouping.var = "orig.ident",
                                 max.cells.per.ident = 500)
 
 write.table(x = all.markers_TF, file = 'Data_out/Seurat_TF_markers.txt', sep = '\t', row.names = F, quote = F)
@@ -335,10 +336,10 @@ all.markers_variable = FindAllMarkers(data1,
 
 #' everything combined:
 all.markers = FindAllMarkers(data1,
-                             logfc.threshold = 0.6,
+                             logfc.threshold = log(2),
                              return.thresh = 0.001,
-                             only.pos = F, 
-                             max.cells.per.ident = 500)
+                             only.pos = T, 
+                             min.diff.pct = 0.2)
   
 
 
@@ -346,13 +347,14 @@ all.markers = FindAllMarkers(data1,
 #' active.ident = the number of clusters Seurat has generated (in our case we have 24);
 #' with the below function we extract the top 10 genes which are most significant and extract just the gene names
   
-list = NULL
+gene_list = NULL
 for (i in 1:length(levels(data1@active.ident))){
-  x = all.markers_variable[as.numeric(all.markers_variable$cluster) == i, ][1 : min(10, length(which(as.numeric(all.markers_variable$cluster) == i))), 7]
+  x = all.markers[as.numeric(all.markers$cluster) == i, ][1 : min(10, length(which(as.numeric(all.markers_variable$cluster) == i))), 7]
   
-  if (is.na(x) == F)
-      list = c(list, x)
+  if (is.na(x) == F){
+    gene_list = c(gene_list, x)
   }
+}
   
 
 #' make a plot
@@ -372,23 +374,23 @@ DEG.variable = DotPlot(data1,
   NoLegend() + 
   coord_flip()
   
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-  #also for the TF list
-  list_TF = NULL
-  for (i in 1:length(levels(data1@active.ident)))
-  {
-    x=all.markers_TF[as.numeric(all.markers_TF$cluster)==i,][1:min(10,length(which(as.numeric(all.markers_TF$cluster)==i))),7]
-    if (is.na (x) ==F)
-      list_TF=c(list_TF,x)
-  }
-  DEG.TFs=DotPlot(data1, features = unique(c(list_TF,'NvTwist')), 
-                  scale.by='size' , col.min = 0, col.max = 3, 
-                  cols = c('lightgrey','darkred')) + RotatedAxis() +
-    FontSize(6,6)+NoLegend()+coord_flip()
-  
-  DEG.variable+DEG.TFs
-  
-}
+# #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#   #also for the TF list
+#   list_TF = NULL
+#   for (i in 1:length(levels(data1@active.ident)))
+#   {
+#     x=all.markers_TF[as.numeric(all.markers_TF$cluster)==i,][1:min(10,length(which(as.numeric(all.markers_TF$cluster)==i))),7]
+#     if (is.na (x) ==F)
+#       list_TF=c(list_TF,x)
+#   }
+#   DEG.TFs=DotPlot(data1, features = unique(c(list_TF,'NvTwist')), 
+#                   scale.by='size' , col.min = 0, col.max = 3, 
+#                   cols = c('lightgrey','darkred')) + RotatedAxis() +
+#     FontSize(6,6)+NoLegend()+coord_flip()
+#   
+#   DEG.variable+DEG.TFs
+#   
+# }
 
 
 
