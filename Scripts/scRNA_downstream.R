@@ -108,7 +108,7 @@ FeaturePlot(data1, features = c('NVE19039', 'FRIS-like4;FRIS-like6',
 
 
 #' test
-NVE8917 = VlnPlot(data1, features = c('TBB-like4;TBB4-like2'),
+NVE8917 = VlnPlot(data1, features = c('NvTwist'),
                   split.by = 'orig.ident', 
                   split.plot = T) +
   RestoreLegend(position = "right") +
