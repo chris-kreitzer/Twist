@@ -127,6 +127,9 @@ NVE8917 = VlnPlot(data1, features = c('NvTwist'),
 NVE8917
 
 
+#' Extracte all markers from cluster 1 and see if we can match any cell type,
+#' based on Alisons Excel sheet.
+
 
 
 
