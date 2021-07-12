@@ -446,7 +446,63 @@ write.xlsx2(Twi4d_WT4d, file = 'Data_out/Twi4d_WT4d.xlsx', sheetName = "DGE_Twi4
 
 
 
+##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+##' some other contrasts for DGE analysis:
+res = results(object = DGE_bulkRNA, lfcThreshold = 1, contrast = c('phenotype', 'Bubble', 'TwiHead'))
+summary(res)
+res = res[order(res$padj), ]
 
+#' Merge with normalized count data
+resdata = merge(as.data.frame(res), as.data.frame(counts(DGE_bulkRNA, normalized = TRUE)), 
+                by = "row.names", sort = TRUE)
+names(resdata)[1] = "Gene"
+
+#' make annotations for the DE genes within the groups; focus on TF and muscle development;
+ortho_table = read.csv(file = 'Data_out/NV2_orthologe.table.tsv', sep = '\t')
+ortho_table = ortho_table[!duplicated(ortho_table$NV2Id) & !is.na(ortho_table$NV2Id), ]
+
+#' one example: Twist 4d (mutant) early development vs Bubble (adult animal with mutation and phenotype)
+Bubble_Twihead = merge(resdata, ortho_table[,c('NV2Id', 'TF', 'deM_TF', 'BLAST.Hit', 'Trinotate.Descr', 'Emapper.Annotation')],
+                   by.x = 'Gene', by.y = 'NV2Id', all.x = T)
+Bubble_Twihead = Bubble_Twihead[which(abs(Bubble_Twihead$log2FoldChange) > 1 & Bubble_Twihead$padj < 0.01),, drop = F]
+
+#' refine based on padjust and logFC
+Bubble_Twihead = Bubble_Twihead[, -grep('^WThead*', colnames(Bubble_Twihead))]
+Bubble_Twihead = Bubble_Twihead[, -grep('Twi4d*', colnames(Bubble_Twihead))]
+Bubble_Twihead = Bubble_Twihead[, -grep('WT4d*', colnames(Bubble_Twihead))]
+
+write.xlsx2(Bubble_Twihead, file = 'Data_out/Bubble_Twihead.xlsx', sheetName = "DGE_Bubble.Twihead",
+            col.names = TRUE, row.names = F, append = FALSE)
+
+
+
+##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+##' some other contrasts for DGE analysis:
+res = results(object = DGE_bulkRNA, lfcThreshold = 1, contrast = c('phenotype', 'Bubble', 'WTHead'))
+summary(res)
+res = res[order(res$padj), ]
+
+#' Merge with normalized count data
+resdata = merge(as.data.frame(res), as.data.frame(counts(DGE_bulkRNA, normalized = TRUE)), 
+                by = "row.names", sort = TRUE)
+names(resdata)[1] = "Gene"
+
+#' make annotations for the DE genes within the groups; focus on TF and muscle development;
+ortho_table = read.csv(file = 'Data_out/NV2_orthologe.table.tsv', sep = '\t')
+ortho_table = ortho_table[!duplicated(ortho_table$NV2Id) & !is.na(ortho_table$NV2Id), ]
+
+#' one example: Twist 4d (mutant) early development vs Bubble (adult animal with mutation and phenotype)
+Bubble_WThead = merge(resdata, ortho_table[,c('NV2Id', 'TF', 'deM_TF', 'BLAST.Hit', 'Trinotate.Descr', 'Emapper.Annotation')],
+                       by.x = 'Gene', by.y = 'NV2Id', all.x = T)
+Bubble_WThead = Bubble_WThead[which(abs(Bubble_WThead$log2FoldChange) > 1 & Bubble_WThead$padj < 0.01),, drop = F]
+
+#' refine based on padjust and logFC
+Bubble_WThead = Bubble_WThead[, -grep('Twihea*', colnames(Bubble_WThead))]
+Bubble_WThead = Bubble_WThead[, -grep('Twi4d*', colnames(Bubble_WThead))]
+Bubble_WThead = Bubble_WThead[, -grep('WT4d*', colnames(Bubble_WThead))]
+
+write.xlsx2(Bubble_WThead, file = 'Data_out/Bubble_WThead.xlsx', sheetName = "DGE_Bubble.WThead",
+            col.names = TRUE, row.names = F, append = FALSE)
 
 
 
