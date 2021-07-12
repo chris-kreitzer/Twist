@@ -28,6 +28,7 @@ library("ggbeeswarm")
 library("apeglm")
 library("genefilter")
 library(rlist)
+library(xlsx)
 
 ## Input and Processing
 bulkRNA_in = read.csv(file = 'Data_out/bulkRNAcounts_featureCounts', 
@@ -411,4 +412,47 @@ mat = assay(vsd_bulkRNA)[topVarGenes, ]
 mat = mat - rowMeans(mat)
 anno = as.data.frame(colData(vsd_bulkRNA)[, c('sampleRNA', 'condition')])
 pheatmap(mat, annotation_col = anno, main = 'top20 diff gene; [vst-counts]', fontsize = 12)
+
+
+
+##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+##' some other contrasts for DGE analysis:
+res = results(object = DGE_bulkRNA, lfcThreshold = 1, contrast = c('phenotype', 'Twi4d', 'WT4d'))
+summary(res)
+res = res[order(res$padj), ]
+
+#' Merge with normalized count data
+resdata = merge(as.data.frame(res), as.data.frame(counts(DGE_bulkRNA, normalized = TRUE)), 
+                by = "row.names", sort = TRUE)
+names(resdata)[1] = "Gene"
+
+#' make annotations for the DE genes within the groups; focus on TF and muscle development;
+ortho_table = read.csv(file = 'Data_out/NV2_orthologe.table.tsv', sep = '\t')
+ortho_table = ortho_table[!duplicated(ortho_table$NV2Id) & !is.na(ortho_table$NV2Id), ]
+
+#' one example: Twist 4d (mutant) early development vs Bubble (adult animal with mutation and phenotype)
+Twi4d_WT4d = merge(resdata, ortho_table[,c('NV2Id', 'TF', 'deM_TF', 'BLAST.Hit', 'Trinotate.Descr', 'Emapper.Annotation')],
+                    by.x = 'Gene', by.y = 'NV2Id', all.x = T)
+Twi4d_WT4d = Twi4d_WT4d[which(abs(Twi4d_WT4d$log2FoldChange) > 1 & Twi4d_WT4d$padj < 0.01),, drop = F]
+
+#' refine based on padjust and logFC
+Twi4d_WT4d = Twi4d_WT4d[, -grep('^WThead*', colnames(Twi4d_WT4d))]
+Twi4d_WT4d = Twi4d_WT4d[, -grep('Twihead*', colnames(Twi4d_WT4d))]
+Twi4d_WT4d = Twi4d_WT4d[, -grep('Bubble*', colnames(Twi4d_WT4d))]
+
+write.xlsx2(Twi4d_WT4d, file = 'Data_out/Twi4d_WT4d.xlsx', sheetName = "DGE_Twi4d.WT4d",
+            col.names = TRUE, row.names = F, append = FALSE)
+
+
+
+
+
+
+
+
+
+
+
+
+
 
