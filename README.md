@@ -2,7 +2,12 @@
 
 
 ## Hypothesis about ***NV-twist***   
-The observed CRISPR/Cas9 ***twist*** knock-out phenotype (Bubble, failed tentacle formation) is novel in Nematostella vectensis. 
+The observed CRISPR/Cas9 ***twist*** knock-out phenotype (Bubble, failed tentacle formation) is novel in Nematostella vectensis.    
+Two general hypotheses: 
+* *NV-twist* is involved in tentacle formation (broader context; muscle cell differentiation)
+* *NV-twist* as a master TF regulator is involved in initiating a cancer-like phenotype (first described in Nematostella vectensis)
+![image](https://user-images.githubusercontent.com/58993468/126198552-16453653-819f-4a82-89e0-e1ee7e79612e.png)
+
 
 ***NV-twist*** is involved in tentacle formation (broader context; muscle cell differentiation)   
 ***NV-twist*** as a master TF regulator is involved in initiating a cancer-like phenotype (first described in Nematostella vectensis)
