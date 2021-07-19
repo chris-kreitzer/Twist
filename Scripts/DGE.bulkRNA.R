@@ -29,6 +29,7 @@ library("apeglm")
 library("genefilter")
 library(rlist)
 library(xlsx)
+library(cowplot)
 
 ## Input and Processing
 bulkRNA_in = read.csv(file = 'Data_out/bulkRNAcounts_featureCounts', 
@@ -100,7 +101,7 @@ ggplot(all.out, aes(x = group, y = mean.twist)) + geom_bar(stat = 'identity') +
 coldata = DataFrame(phenotype = factor(rep(c('Bubble', 'Twi4d', 'TwiHead', 'WT4d', 'WTHead'), each = 3)))
 
 # creating DESeq2 object:
-bulkRNA_object = DESeqDataSetFromMatrix(countData = bulkRNA_modi, 
+bulkRNA_object_phenotype = DESeqDataSetFromMatrix(countData = bulkRNA_modi, 
                                     colData = coldata,
                                     design = ~phenotype)
 
@@ -115,14 +116,14 @@ bulkRNA_object = DESeqDataSetFromMatrix(countData = bulkRNA_modi,
 # different ranges of the mean values.
 
 #' here I am using Variance-stabilizing transformation (VST);
-vsd_bulkRNA = vst(bulkRNA_object, blind = FALSE)
-rlog_bulkRNA = rlog(bulkRNA_object, blind = FALSE)
+vsd_bulkRNA = vst(bulkRNA_object_phenotype, blind = FALSE)
+rlog_bulkRNA = rlog(bulkRNA_object_phenotype, blind = FALSE)
 
 #' compare the normalization methods on twist;
-bulkRNA_object = estimateSizeFactors(bulkRNA_object)
+bulkRNA_object_phenotype = estimateSizeFactors(bulkRNA_object_phenotype)
 
 transformed_data = bind_rows(
-  as_data_frame(log2(counts(bulkRNA_object, normalized = T)[, 1:15] + 1)) %>%
+  as_data_frame(log2(counts(bulkRNA_object_phenotype, normalized = T)[, 1:15] + 1)) %>%
     mutate(transformation = "log2(x + 1)",
            gene = row.names(assay(bulkRNA_object))),
   as_data_frame(assay(vsd_bulkRNA)[, 1:15]) %>% 
@@ -196,33 +197,25 @@ pheatmap(sampleDistMatrix,
 
 
 ## PCA: sample to sample distance:
-plotPCA(vsd_bulkRNA, intgroup = c("condition"))
-plotPCA(vsd_bulkRNA, intgroup = c("sampleRNA", 'condition'))
+plotPCA(vsd_bulkRNA, intgroup = c("phenotype"))
 
 #' return the rawData
-PCA_raw = plotPCA(vsd_bulkRNA, intgroup = c( "sampleRNA", "condition"), returnData = TRUE)
+PCA_raw = plotPCA(vsd_bulkRNA, intgroup = c( "phenotype"), returnData = TRUE)
 ggplot(PCA_raw, 
        aes(x = PC1, y = PC2, 
-           color = sampleRNA, 
-           shape = condition)) +
+           color = phenotype)) +
   geom_point(size = 3) +
   coord_fixed() +
-  scale_color_manual(values = c('Bubble1' = 'red',
-                                'Bubble2' = 'red',
-                                'Bubble3' = 'red',
-                                'Twi4d_1' = 'blue',
-                                'Twi4d_2' = 'blue',
-                                'Twi4d_3' = 'blue',
-                                'Twihead_1' = 'aquamarine3',
-                                'Twihead_2' = 'aquamarine3',
-                                'Twihead_3' = 'aquamarine3',
-                                'WT4d_1' = 'brown',
-                                'WT4d_2' = 'brown',
-                                'WT4d_3' = 'brown',
-                                'WThead_1' = 'orange',
-                                'WThead_2' = 'orange',
-                                'WThead_3' = 'orange')) +
-  ggtitle("PCA with variance-stabilized transformed data")
+  scale_color_manual(values = c('Bubble' = 'red',
+                                'Twi4d' = 'blue',
+                                'TwiHead' = 'aquamarine3',
+                                'WT4d' = 'brown',
+                                'WTHead' = 'orange')) + 
+  ggtitle("PCA on variance-stabilized transformed data") +
+  labs(x = 'PC1: 82% variance', y = 'PC2: 12% variance') +
+  guides(color = guide_legend(title = 'Pheno-/Genotype\ncombination')) +
+  theme_bw() +
+  theme(axis.text = element_blank())
 
 
 
@@ -351,6 +344,8 @@ for(i in 2:length(resultsNames(DGE_bulkRNA))){
 
 
 
+##-----------------------------------------------------------------------------
+## Updates based on discussion with Ulli and Patricio and Juan;
 
 
 
