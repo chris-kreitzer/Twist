@@ -205,7 +205,7 @@ ggplot(PCA_raw,
        aes(x = PC1, y = PC2, 
            color = sampleRNA, 
            shape = condition)) +
-  geom_point(size =3) +
+  geom_point(size = 3) +
   coord_fixed() +
   scale_color_manual(values = c('Bubble1' = 'red',
                                 'Bubble2' = 'red',
@@ -236,7 +236,7 @@ DGE_bulkRNA = DESeq(bulkRNA_object)
 
 #' get differential expression results;
 #' Bubble vs WT4d
-res = results(object = DGE_bulkRNA, lfcThreshold = 1, contrast = c('phenotype', 'Bubble', 'Twi4d'))
+res = results(object = DGE_bulkRNA, lfcThreshold = 1, contrast = c('phenotype', 'TwiHead', 'WTHead'))
 res = res[order(res$padj), ]
 
 #' Merge with normalized count data
@@ -254,9 +254,12 @@ Bubble_WT4d = merge(resdata, ortho_table[,c('NV2Id', 'TF', 'deM_TF', 'BLAST.Hit'
 
 #' refine based on padjust and logFC
 Bubble_WT4d = Bubble_WT4d[which(abs(Bubble_WT4d$log2FoldChange) > 1 & Bubble_WT4d$padj < 0.01),, drop = F]
-Bubble_WT4d = Bubble_WT4d[, -grep('^WThead*', colnames(Bubble_WT4d))]
+Bubble_WT4d = Bubble_WT4d[, -grep('^Bubble*', colnames(Bubble_WT4d))]
 Bubble_WT4d = Bubble_WT4d[, -grep('Twihead*', colnames(Bubble_WT4d))]
 Bubble_WT4d = Bubble_WT4d[, -grep('Twi4d*', colnames(Bubble_WT4d))]
+
+Twihead_WThead = Bubble_WT4d
+View(Twihead_WThead)
 
 #' export results:
 write.table(x = Bubble_WT4d, file = 'Data_out/Bubble_WT4d_dge_fulltable.txt', sep = '\t', row.names = F, quote = F)
