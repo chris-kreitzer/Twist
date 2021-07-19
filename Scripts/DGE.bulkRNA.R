@@ -32,6 +32,7 @@ library(xlsx)
 library(cowplot)
 
 ## Input and Processing
+load('NV2_annotation')
 bulkRNA_in = read.csv(file = 'Data_out/bulkRNAcounts_featureCounts', 
                       skip = 1, 
                       sep = '\t')
@@ -225,12 +226,11 @@ ggplot(PCA_raw,
 #' estimation of size factors (controlling for differences in the sequencing depth of the samples);
 #' estimation of dispersion values for each gene
 #' fitting a generalized linear model (negative binomial model)
-DGE_bulkRNA = DESeq(bulkRNA_object)
+DGE_bulkRNA = DESeq(bulkRNA_object_phenotype)
 
 #' get differential expression results;
 #' Bubble vs WT4d
 res = results(object = DGE_bulkRNA, lfcThreshold = 1, contrast = c('phenotype', 'TwiHead', 'WTHead'))
-res = res[order(res$padj), ]
 
 #' Merge with normalized count data
 resdata = merge(as.data.frame(res), as.data.frame(counts(DGE_bulkRNA, normalized = TRUE)), 
@@ -242,29 +242,27 @@ ortho_table = read.csv(file = 'Data_out/NV2_orthologe.table.tsv', sep = '\t')
 ortho_table = ortho_table[!duplicated(ortho_table$NV2Id) & !is.na(ortho_table$NV2Id), ]
 
 #' one example: Twist 4d (mutant) early development vs Bubble (adult animal with mutation and phenotype)
-Bubble_WT4d = merge(resdata, ortho_table[,c('NV2Id', 'TF', 'deM_TF', 'BLAST.Hit', 'Trinotate.Descr', 'Emapper.Annotation')],
+TwiHead_WTHead = merge(resdata, ortho_table[,c('NV2Id', 'TF', 'deM_TF', 'BLAST.Hit', 'Trinotate.Descr', 'Emapper.Annotation')],
           by.x = 'Gene', by.y = 'NV2Id', all.x = T)
 
-#' refine based on padjust and logFC
-Bubble_WT4d = Bubble_WT4d[which(abs(Bubble_WT4d$log2FoldChange) > 1 & Bubble_WT4d$padj < 0.01),, drop = F]
-Bubble_WT4d = Bubble_WT4d[, -grep('^Bubble*', colnames(Bubble_WT4d))]
-Bubble_WT4d = Bubble_WT4d[, -grep('Twihead*', colnames(Bubble_WT4d))]
-Bubble_WT4d = Bubble_WT4d[, -grep('Twi4d*', colnames(Bubble_WT4d))]
 
-Twihead_WThead = Bubble_WT4d
-View(Twihead_WThead)
+#' refine based on p-adjust and logFC
+TwiHead_WTHead = TwiHead_WTHead[which(abs(TwiHead_WTHead$log2FoldChange) > 1 & TwiHead_WTHead$padj < 0.01),, drop = F]
+TwiHead_WTHead = TwiHead_WTHead[, -grep('^Bubble*', colnames(TwiHead_WTHead))]
+TwiHead_WTHead = TwiHead_WTHead[, -grep('WT4d*', colnames(TwiHead_WTHead))]
+TwiHead_WTHead = TwiHead_WTHead[, -grep('Twi4d*', colnames(TwiHead_WTHead))]
 
-#' export results:
-write.table(x = Bubble_WT4d, file = 'Data_out/Bubble_WT4d_dge_fulltable.txt', sep = '\t', row.names = F, quote = F)
+#' add meta data to up-/down table
+TwiHead_WTHead_full = merge(x = TwiHead_WTHead, y = NV2_annotation, 
+                            by.x = 'Gene', by.y = 'NV2', all.x = T)
+write.xlsx(x = TwiHead_WTHead_full, file = 'Data_out/TwiHead_WTHead_fulltable.xlsx', row.names = F)
+# TwiHead_WTHead_full$gene_short_name[which(TwiHead_WTHead_full$log2FoldChange < 0 & !is.na(TwiHead_WTHead_full$TF))]
 
-#' just TF and muscle annotation
-Bubble_WT4d_short = Bubble_WT4d[!is.na(Bubble_WT4d$TF) | !is.na(Bubble_WT4d$deM_TF), ]
-write.table(x = Bubble_WT4d_short, file = 'Data_out/Bubble_WT4d_dge_filtered.txt', sep = '\t', row.names = F, quote = F)
 
 
 ##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #' comparision of TwiHead and WT4d; whether we see that twist is signigicantly different expressed;
-res = results(object = DGE_bulkRNA, lfcThreshold = 1, contrast = c('phenotype', 'TwiHead', 'WT4d'))
+res = results(object = DGE_bulkRNA, lfcThreshold = 1, contrast = c('phenotype', 'WT4d', 'Twi4d'))
 res = res[order(res$padj), ]
 
 #' Merge with normalized count data
@@ -292,32 +290,15 @@ write.table(x = Twihead_WT4d_short, file = 'Data_out/Twihead_WT4d_dge_filtered.t
 
 
 
+## Differential gene expression: 
+#' DESeq function consits of the following steps:
+#' estimation of size factors (controlling for differences in the sequencing depth of the samples);
+#' estimation of dispersion values for each gene
+#' fitting a generalized linear model (negative binomial model)
+DGE_bulkRNA = DESeq(bulkRNA_object_phenotype)
 
 
 
-#' Volcano plot with "significant" genes labeled
-volcanoplot = function(res, lfcthresh = 1, sigthresh = 0.05, 
-                       main = "Volcano Plot", 
-                       legendpos = "bottomright", 
-                       labelsig = TRUE, textcx = 1, ...) {
-  
-  with(res, plot(log2FoldChange, -log10(pvalue), pch = 20, main = main, ...))
-  with(subset(res, padj < sigthresh), points(log2FoldChange, -log10(pvalue), pch = 20, col = "red", ...))
-  with(subset(res, abs(log2FoldChange) > lfcthresh), points(log2FoldChange, -log10(pvalue), pch = 20, col = "orange", ...))
-  with(subset(res, padj < sigthresh & abs(log2FoldChange) > lfcthresh), points(log2FoldChange, -log10(pvalue), pch = 20, col = "green", ...))
-  if (labelsig) {
-    require(calibrate)
-    with(subset(res, padj < sigthresh & abs(log2FoldChange) > lfcthresh), textxy(log2FoldChange, -log10(pvalue), labs = Gene, cex = textcx, ...))
-  }
-  legend(legendpos, xjust = 1, yjust = 1, 
-         legend = c(paste("FDR<", sigthresh, sep = ""), 
-                    paste("|LogFC|>", lfcthresh, sep = ""), "both"), 
-         pch = 20, col = c("red", "orange", "green"))
-}
-
-png("diffexpr-volcanoplot.png", 1400, 1200, pointsize = 15)
-volcanoplot(resdata, lfcthresh = 1, sigthresh = 0.05, textcx = .8, xlim = c(-2.3, 2))
-dev.off()
 
 
 ##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
