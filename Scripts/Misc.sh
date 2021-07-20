@@ -15,3 +15,9 @@ ln -s /proj/ferrer/rna[...] <destinationfolder>
 
 awk -F '$3==exon' input > output
 
+
+#' extract a specific sequence (region) from indexed fasta file:
+module load samtools
+
+samtools faidx <ref.fasta> chr2:2345873-3219084 > output
+
