@@ -311,14 +311,29 @@ write.xlsx(x = Bubble_TwiHead_full, file = 'Data_out/Bubble_TwiHead_fulltable.xl
 
 
 
+##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#' comparision of Bubble and WThead; whether we see that twist is signigicantly different expressed;
+res = results(object = DGE_bulkRNA, lfcThreshold = 1, contrast = c('phenotype', 'Bubble', 'WTHead'))
 
+#' Merge with normalized count data
+resdata = merge(as.data.frame(res), as.data.frame(counts(DGE_bulkRNA, normalized = TRUE)), 
+                by = "row.names", sort = TRUE)
+names(resdata)[1] = "Gene"
 
+Bubble_WTHead = merge(resdata, ortho_table[,c('NV2Id', 'TF', 'deM_TF', 'BLAST.Hit', 'Trinotate.Descr', 'Emapper.Annotation')],
+                       by.x = 'Gene', by.y = 'NV2Id', all.x = T)
 
+#' refine based on padjust and logFC
+Bubble_WTHead = Bubble_WTHead[which(abs(Bubble_WTHead$log2FoldChange) > 1 & Bubble_WTHead$padj < 0.01),, drop = F]
+Bubble_WTHead = Bubble_WTHead[, -grep('^Twihead*', colnames(Bubble_WTHead))]
+Bubble_WTHead = Bubble_WTHead[, -grep('Twi4d*', colnames(Bubble_WTHead))]
+Bubble_WTHead = Bubble_WTHead[, -grep('WT4d*', colnames(Bubble_WTHead))]
 
-
-
-
-
+#' add meta data to up-/down table
+Bubble_WTHead_full = merge(x = Bubble_WTHead, y = NV2_annotation, 
+                            by.x = 'Gene', by.y = 'NV2', all.x = T)
+write.xlsx(x = Bubble_WTHead_full, file = 'Data_out/Bubble_WTHead_fulltable.xlsx', row.names = F)
+#' Bubble_WTHead_full$gene_short_name[which(Bubble_WTHead_full$log2FoldChange < 0 & !is.na(Bubble_WTHead_full$TF))]
 
 
 
@@ -327,45 +342,15 @@ write.xlsx(x = Bubble_TwiHead_full, file = 'Data_out/Bubble_TwiHead_fulltable.xl
 #' estimation of size factors (controlling for differences in the sequencing depth of the samples);
 #' estimation of dispersion values for each gene
 #' fitting a generalized linear model (negative binomial model)
-DGE_bulkRNA = DESeq(bulkRNA_object_phenotype)
+#' Making a different Metadata column (comparing all mutants to wildtype animals)
+coldata = DataFrame(genotype = factor(c(rep('TwistMutant', 9), rep('WT', 6))))
 
+# creating DESeq2 object:
+bulkRNA_object_genotype = DESeqDataSetFromMatrix(countData = bulkRNA_modi, 
+                                                  colData = coldata,
+                                                  design = ~genotype)
 
-
-
-
-##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-## Looking into contrasts; results(DGE_bulkRNA)
-resultsNames(DGE_bulkRNA)
-
-for(i in 2:length(resultsNames(DGE_bulkRNA))){
-  print(resultsNames(DGE_bulkRNA)[i])
-  var1 = strsplit(resultsNames(DGE_bulkRNA)[i], '_')[[1]][2]
-  var2 = strsplit(resultsNames(DGE_bulkRNA)[i], '_')[[1]][4]
-  
-  #' running contrasts;
-  res = results(DGE_bulkRNA,
-                contrast = c('group', var1, var2),
-                lfcThreshold = 1)
-  res_out = merge(as.data.frame(res),
-              as.data.frame(counts(DGE_bulkRNA, normalized = TRUE)),
-              by = 'row.names', sort = F)
-  
-  names(res_out)[1] = 'Gene'
-  res_out = res_out[which(res_out$padj <= 0.01 & abs(res_out$log2FoldChange) > 1),, drop = F]
-  write.table(x = res_out, file = paste0(var1, '_', var2, '_comparision.txt'), sep = '\t', quote = F, row.names = F)
-}
-
-
-
-##-----------------------------------------------------------------------------
-## Updates based on discussion with Ulli and Patricio and Juan;
-
-
-
-
-
-
-
+DGE_bulkRNA_genotype = DESeq(bulkRNA_object_genotype)
 
 
 
@@ -426,98 +411,27 @@ pheatmap(mat, annotation_col = anno, main = 'top20 diff gene; [vst-counts]', fon
 
 
 
-##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-##' some other contrasts for DGE analysis:
-res = results(object = DGE_bulkRNA, lfcThreshold = 1, contrast = c('phenotype', 'Twi4d', 'WT4d'))
-summary(res)
-res = res[order(res$padj), ]
+##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+## Looking into contrasts; results(DGE_bulkRNA)
+resultsNames(DGE_bulkRNA)
 
-#' Merge with normalized count data
-resdata = merge(as.data.frame(res), as.data.frame(counts(DGE_bulkRNA, normalized = TRUE)), 
-                by = "row.names", sort = TRUE)
-names(resdata)[1] = "Gene"
-
-#' make annotations for the DE genes within the groups; focus on TF and muscle development;
-ortho_table = read.csv(file = 'Data_out/NV2_orthologe.table.tsv', sep = '\t')
-ortho_table = ortho_table[!duplicated(ortho_table$NV2Id) & !is.na(ortho_table$NV2Id), ]
-
-#' one example: Twist 4d (mutant) early development vs Bubble (adult animal with mutation and phenotype)
-Twi4d_WT4d = merge(resdata, ortho_table[,c('NV2Id', 'TF', 'deM_TF', 'BLAST.Hit', 'Trinotate.Descr', 'Emapper.Annotation')],
-                    by.x = 'Gene', by.y = 'NV2Id', all.x = T)
-Twi4d_WT4d = Twi4d_WT4d[which(abs(Twi4d_WT4d$log2FoldChange) > 1 & Twi4d_WT4d$padj < 0.01),, drop = F]
-
-#' refine based on padjust and logFC
-Twi4d_WT4d = Twi4d_WT4d[, -grep('^WThead*', colnames(Twi4d_WT4d))]
-Twi4d_WT4d = Twi4d_WT4d[, -grep('Twihead*', colnames(Twi4d_WT4d))]
-Twi4d_WT4d = Twi4d_WT4d[, -grep('Bubble*', colnames(Twi4d_WT4d))]
-
-write.xlsx2(Twi4d_WT4d, file = 'Data_out/Twi4d_WT4d.xlsx', sheetName = "DGE_Twi4d.WT4d",
-            col.names = TRUE, row.names = F, append = FALSE)
-
-
-
-
-##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-##' some other contrasts for DGE analysis:
-res = results(object = DGE_bulkRNA, lfcThreshold = 1, contrast = c('phenotype', 'Bubble', 'TwiHead'))
-summary(res)
-res = res[order(res$padj), ]
-
-#' Merge with normalized count data
-resdata = merge(as.data.frame(res), as.data.frame(counts(DGE_bulkRNA, normalized = TRUE)), 
-                by = "row.names", sort = TRUE)
-names(resdata)[1] = "Gene"
-
-#' make annotations for the DE genes within the groups; focus on TF and muscle development;
-ortho_table = read.csv(file = 'Data_out/NV2_orthologe.table.tsv', sep = '\t')
-ortho_table = ortho_table[!duplicated(ortho_table$NV2Id) & !is.na(ortho_table$NV2Id), ]
-
-#' one example: Twist 4d (mutant) early development vs Bubble (adult animal with mutation and phenotype)
-Bubble_Twihead = merge(resdata, ortho_table[,c('NV2Id', 'TF', 'deM_TF', 'BLAST.Hit', 'Trinotate.Descr', 'Emapper.Annotation')],
-                   by.x = 'Gene', by.y = 'NV2Id', all.x = T)
-Bubble_Twihead = Bubble_Twihead[which(abs(Bubble_Twihead$log2FoldChange) > 1 & Bubble_Twihead$padj < 0.01),, drop = F]
-
-#' refine based on padjust and logFC
-Bubble_Twihead = Bubble_Twihead[, -grep('^WThead*', colnames(Bubble_Twihead))]
-Bubble_Twihead = Bubble_Twihead[, -grep('Twi4d*', colnames(Bubble_Twihead))]
-Bubble_Twihead = Bubble_Twihead[, -grep('WT4d*', colnames(Bubble_Twihead))]
-
-write.xlsx2(Bubble_Twihead, file = 'Data_out/Bubble_Twihead.xlsx', sheetName = "DGE_Bubble.Twihead",
-            col.names = TRUE, row.names = F, append = FALSE)
-
-
-
-##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-##' some other contrasts for DGE analysis:
-res = results(object = DGE_bulkRNA, lfcThreshold = 1, contrast = c('phenotype', 'Bubble', 'WTHead'))
-summary(res)
-res = res[order(res$padj), ]
-
-#' Merge with normalized count data
-resdata = merge(as.data.frame(res), as.data.frame(counts(DGE_bulkRNA, normalized = TRUE)), 
-                by = "row.names", sort = TRUE)
-names(resdata)[1] = "Gene"
-
-#' make annotations for the DE genes within the groups; focus on TF and muscle development;
-ortho_table = read.csv(file = 'Data_out/NV2_orthologe.table.tsv', sep = '\t')
-ortho_table = ortho_table[!duplicated(ortho_table$NV2Id) & !is.na(ortho_table$NV2Id), ]
-
-#' one example: Twist 4d (mutant) early development vs Bubble (adult animal with mutation and phenotype)
-Bubble_WThead = merge(resdata, ortho_table[,c('NV2Id', 'TF', 'deM_TF', 'BLAST.Hit', 'Trinotate.Descr', 'Emapper.Annotation')],
-                       by.x = 'Gene', by.y = 'NV2Id', all.x = T)
-Bubble_WThead = Bubble_WThead[which(abs(Bubble_WThead$log2FoldChange) > 1 & Bubble_WThead$padj < 0.01),, drop = F]
-
-#' refine based on padjust and logFC
-Bubble_WThead = Bubble_WThead[, -grep('Twihea*', colnames(Bubble_WThead))]
-Bubble_WThead = Bubble_WThead[, -grep('Twi4d*', colnames(Bubble_WThead))]
-Bubble_WThead = Bubble_WThead[, -grep('WT4d*', colnames(Bubble_WThead))]
-
-write.xlsx2(Bubble_WThead, file = 'Data_out/Bubble_WThead.xlsx', sheetName = "DGE_Bubble.WThead",
-            col.names = TRUE, row.names = F, append = FALSE)
-
-
-
-
+for(i in 2:length(resultsNames(DGE_bulkRNA))){
+  print(resultsNames(DGE_bulkRNA)[i])
+  var1 = strsplit(resultsNames(DGE_bulkRNA)[i], '_')[[1]][2]
+  var2 = strsplit(resultsNames(DGE_bulkRNA)[i], '_')[[1]][4]
+  
+  #' running contrasts;
+  res = results(DGE_bulkRNA,
+                contrast = c('group', var1, var2),
+                lfcThreshold = 1)
+  res_out = merge(as.data.frame(res),
+                  as.data.frame(counts(DGE_bulkRNA, normalized = TRUE)),
+                  by = 'row.names', sort = F)
+  
+  names(res_out)[1] = 'Gene'
+  res_out = res_out[which(res_out$padj <= 0.01 & abs(res_out$log2FoldChange) > 1),, drop = F]
+  write.table(x = res_out, file = paste0(var1, '_', var2, '_comparision.txt'), sep = '\t', quote = F, row.names = F)
+}
 
 
 
