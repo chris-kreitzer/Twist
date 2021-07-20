@@ -261,23 +261,33 @@ write.xlsx(x = TwiHead_WTHead_full, file = 'Data_out/TwiHead_WTHead_fulltable.xl
 
 
 ##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-#' comparision of TwiHead and WT4d; whether we see that twist is signigicantly different expressed;
-res = results(object = DGE_bulkRNA, lfcThreshold = 1, contrast = c('phenotype', 'WT4d', 'Twi4d'))
-res = res[order(res$padj), ]
+#' comparision of Twi4d and WT4d; whether we see that twist is signigicantly different expressed;
+res = results(object = DGE_bulkRNA, lfcThreshold = 1, contrast = c('phenotype', 'Twi4d', 'WT4d'))
 
 #' Merge with normalized count data
 resdata = merge(as.data.frame(res), as.data.frame(counts(DGE_bulkRNA, normalized = TRUE)), 
                 by = "row.names", sort = TRUE)
 names(resdata)[1] = "Gene"
 
-Twihead_WT4d = merge(resdata, ortho_table[,c('NV2Id', 'TF', 'deM_TF', 'BLAST.Hit', 'Trinotate.Descr', 'Emapper.Annotation')],
+Twi4d_WT4d = merge(resdata, ortho_table[,c('NV2Id', 'TF', 'deM_TF', 'BLAST.Hit', 'Trinotate.Descr', 'Emapper.Annotation')],
                     by.x = 'Gene', by.y = 'NV2Id', all.x = T)
 
 #' refine based on padjust and logFC
-Twihead_WT4d = Twihead_WT4d[which(abs(Twihead_WT4d$log2FoldChange) > 1 & Twihead_WT4d$padj < 0.01),, drop = F]
-Twihead_WT4d = Twihead_WT4d[, -grep('^WThead*', colnames(Twihead_WT4d))]
-Twihead_WT4d = Twihead_WT4d[, -grep('Twi4d*', colnames(Twihead_WT4d))]
-Twihead_WT4d = Twihead_WT4d[, -grep('Bubble*', colnames(Twihead_WT4d))]
+Twi4d_WT4d = Twi4d_WT4d[which(abs(Twi4d_WT4d$log2FoldChange) > 1 & Twi4d_WT4d$padj < 0.01),, drop = F]
+Twi4d_WT4d = Twi4d_WT4d[, -grep('^WThead*', colnames(Twi4d_WT4d))]
+Twi4d_WT4d = Twi4d_WT4d[, -grep('Twihead*', colnames(Twi4d_WT4d))]
+Twi4d_WT4d = Twi4d_WT4d[, -grep('Bubble*', colnames(Twi4d_WT4d))]
+
+#' add meta data to up-/down table
+Twi4d_WT4d_full = merge(x = Twi4d_WT4d, y = NV2_annotation, 
+                            by.x = 'Gene', by.y = 'NV2', all.x = T)
+write.xlsx(x = Twi4d_WT4d_full, file = 'Data_out/Twi4d_WT4d_fulltable.xlsx', row.names = F)
+Twi4d_WT4d_full$gene_short_name[which(Twi4d_WT4d_full$log2FoldChange > 0 & !is.na(Twi4d_WT4d_full$TF))]
+
+
+
+
+
 
 #' export results:
 write.table(x = Twihead_WT4d, file = 'Data_out/Twihead_WT4d_dge_fulltable.txt', sep = '\t', row.names = F, quote = F)
