@@ -282,19 +282,41 @@ Twi4d_WT4d = Twi4d_WT4d[, -grep('Bubble*', colnames(Twi4d_WT4d))]
 Twi4d_WT4d_full = merge(x = Twi4d_WT4d, y = NV2_annotation, 
                             by.x = 'Gene', by.y = 'NV2', all.x = T)
 write.xlsx(x = Twi4d_WT4d_full, file = 'Data_out/Twi4d_WT4d_fulltable.xlsx', row.names = F)
-Twi4d_WT4d_full$gene_short_name[which(Twi4d_WT4d_full$log2FoldChange > 0 & !is.na(Twi4d_WT4d_full$TF))]
+#' Twi4d_WT4d_full$gene_short_name[which(Twi4d_WT4d_full$log2FoldChange > 0 & !is.na(Twi4d_WT4d_full$TF))]
+
+
+##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#' comparision of Bubble and Twihead; whether we see that twist is signigicantly different expressed;
+res = results(object = DGE_bulkRNA, lfcThreshold = 1, contrast = c('phenotype', 'Bubble', 'TwiHead'))
+
+#' Merge with normalized count data
+resdata = merge(as.data.frame(res), as.data.frame(counts(DGE_bulkRNA, normalized = TRUE)), 
+                by = "row.names", sort = TRUE)
+names(resdata)[1] = "Gene"
+
+Bubble_TwiHead = merge(resdata, ortho_table[,c('NV2Id', 'TF', 'deM_TF', 'BLAST.Hit', 'Trinotate.Descr', 'Emapper.Annotation')],
+                   by.x = 'Gene', by.y = 'NV2Id', all.x = T)
+
+#' refine based on padjust and logFC
+Bubble_TwiHead = Bubble_TwiHead[which(abs(Bubble_TwiHead$log2FoldChange) > 1 & Bubble_TwiHead$padj < 0.01),, drop = F]
+Bubble_TwiHead = Bubble_TwiHead[, -grep('^WThead*', colnames(Bubble_TwiHead))]
+Bubble_TwiHead = Bubble_TwiHead[, -grep('Twi4d*', colnames(Bubble_TwiHead))]
+Bubble_TwiHead = Bubble_TwiHead[, -grep('WT4d*', colnames(Bubble_TwiHead))]
+
+#' add meta data to up-/down table
+Bubble_TwiHead_full = merge(x = Bubble_TwiHead, y = NV2_annotation, 
+                        by.x = 'Gene', by.y = 'NV2', all.x = T)
+write.xlsx(x = Bubble_TwiHead_full, file = 'Data_out/Bubble_TwiHead_fulltable.xlsx', row.names = F)
+#' Bubble_TwiHead_full$gene_short_name[which(Bubble_TwiHead_full$log2FoldChange < 0 & !is.na(Bubble_TwiHead_full$TF))]
 
 
 
 
 
 
-#' export results:
-write.table(x = Twihead_WT4d, file = 'Data_out/Twihead_WT4d_dge_fulltable.txt', sep = '\t', row.names = F, quote = F)
 
-#' just TF and muscle annotation
-Twihead_WT4d_short = Twihead_WT4d[!is.na(Twihead_WT4d$TF) | !is.na(Twihead_WT4d$deM_TF), ]
-write.table(x = Twihead_WT4d_short, file = 'Data_out/Twihead_WT4d_dge_filtered.txt', sep = '\t', row.names = F, quote = F)
+
+
 
 
 
