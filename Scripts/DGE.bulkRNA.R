@@ -337,6 +337,7 @@ write.xlsx(x = Bubble_WTHead_full, file = 'Data_out/Bubble_WTHead_fulltable.xlsx
 
 
 
+
 ## Differential gene expression: 
 #' DESeq function consits of the following steps:
 #' estimation of size factors (controlling for differences in the sequencing depth of the samples);
@@ -351,6 +352,27 @@ bulkRNA_object_genotype = DESeqDataSetFromMatrix(countData = bulkRNA_modi,
                                                   design = ~genotype)
 
 DGE_bulkRNA_genotype = DESeq(bulkRNA_object_genotype)
+
+
+#' extract the results
+res = results(object = DGE_bulkRNA_genotype, lfcThreshold = 1, contrast = c('genotype', 'TwistMutant', 'WT'))
+
+#' Merge with normalized count data
+resdata = merge(as.data.frame(res), as.data.frame(counts(DGE_bulkRNA_genotype, normalized = TRUE)), 
+                by = "row.names", sort = TRUE)
+names(resdata)[1] = "Gene"
+
+TwiMutants_WT = merge(resdata, ortho_table[,c('NV2Id', 'TF', 'deM_TF', 'BLAST.Hit', 'Trinotate.Descr', 'Emapper.Annotation')],
+                      by.x = 'Gene', by.y = 'NV2Id', all.x = T)
+
+#' refine based on padjust and logFC
+TwiMutants_WT = TwiMutants_WT[which(abs(TwiMutants_WT$log2FoldChange) > 1 & TwiMutants_WT$padj < 0.01),, drop = F]
+
+#' add meta data to up-/down table
+TwiMutants_WT_full = merge(x = TwiMutants_WT, y = NV2_annotation, 
+                           by.x = 'Gene', by.y = 'NV2', all.x = T)
+write.xlsx(x = TwiMutants_WT_full, file = 'Data_out/TwiMutants_WT_fulltable.xlsx', row.names = F)
+TwiMutants_WT_full$gene_short_name[which(TwiMutants_WT_full$log2FoldChange < 0 & !is.na(TwiMutants_WT_full$TF))]
 
 
 
