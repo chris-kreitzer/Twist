@@ -30,6 +30,7 @@ library("genefilter")
 library(rlist)
 library(xlsx)
 library(cowplot)
+library(forcats)
 
 ## Input and Processing
 load('NV2_annotation')
@@ -246,16 +247,6 @@ TwiHead_WTHead = merge(resdata, ortho_table[,c('NV2Id', 'TF', 'deM_TF', 'BLAST.H
           by.x = 'Gene', by.y = 'NV2Id', all.x = T)
 
 
-#' looking into MOX genes; NvMOXA-D
-MOX_genes = NV2_annotation$NV2[grep(pattern = 'NvMOX.*', NV2_annotation$gene_short_name, ignore.case = T)]
-
-
-Sox2 and Ncol3 and Carboxypeptidase (tbd).
-Mox genes are co-expressed with twist,
-Paraxis, tbx4/5? 
-
-
-
 #' refine based on p-adjust and logFC
 TwiHead_WTHead = TwiHead_WTHead[which(abs(TwiHead_WTHead$log2FoldChange) > 1 & TwiHead_WTHead$padj < 0.01),, drop = F]
 TwiHead_WTHead = TwiHead_WTHead[, -grep('^Bubble*', colnames(TwiHead_WTHead))]
@@ -387,7 +378,61 @@ TwiMutants_WT_full$gene_short_name[which(TwiMutants_WT_full$log2FoldChange < 0 &
 
 
 
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#' Co-expression analysis with NvTwist
+#' looking into MOX genes; NvMOXA-D
+#' MOX genes are co-expressed with Twist
+MOX_genes = NV2_annotation$NV2[grep(pattern = 'NvMOX.*', NV2_annotation$gene_short_name, ignore.case = T)]
+transformed_data = log(counts(bulkRNA_object_phenotype, normalize = T))
 
+MOX_frame = as.data.frame(transformed_data[row.names(transformed_data) %in% c('NV2.10864', MOX_genes), ])
+MOX_frame$condition = c('Twist', rep('MOX_genes', 4))
+
+
+#' TwiHead _ vs _ WTHead
+mox_twihead_wthead = data.frame(condition = c(rep('TwiHead_WTHead', 30),
+                                              rep('Bubble_TwiHead', 30),
+                                              rep('Bubble_WTHead', 30)),
+                                group = c(c(rep('Twist', 6), rep('MOX_genes', 24)),
+                                               c(rep('Twist', 6), rep('MOX_genes', 24)),
+                                          c(rep('Twist', 6), rep('MOX_genes', 24))),
+                                value = c(7.139940,  6.964653,  6.947383, 5.999216, 5.994176, 5.911352,
+                                          5.829818,  5.830702,  5.814066, 5.538977,  5.530957,  5.497548, 4.724877,  4.875909,  4.617815,
+                                          4.762264,  4.280618,  4.377430, 6.039762, 5.977537, 6.023941, 5.893855, 5.900844, 5.866312,
+                                          5.612539, 5.317396, 5.344587, 4.592015, 4.711260, 4.674014,
+                                          6.432408, 6.363824, 6.367006, 7.139940,  6.964653,  6.947383,
+                                          4.490474, 4.314435, 4.696607, 4.570517, 3.854903, 4.360135, 3.997997, 3.972686, 3.666988, 3.104179, 2.979434, 2.527553,
+                                          5.829818,  5.830702,  5.814066, 5.538977,  5.530957,  5.497548, 4.724877,  4.875909,  4.617815, 4.762264,  4.280618,  4.377430,
+                                          6.432408, 6.363824, 6.367006, 5.999216, 5.994176, 5.911352,
+                                          4.490474, 4.314435, 4.696607, 4.570517, 3.854903, 4.360135, 3.997997, 3.972686, 3.666988, 3.104179, 2.979434, 2.527553,
+                                          6.039762, 5.977537, 6.023941, 5.893855, 5.900844, 5.866312,
+                                          5.612539, 5.317396, 5.344587, 4.592015, 4.711260, 4.674014))
+
+mox_twihead_wthead$group = factor(mox_twihead_wthead$group, levels = c('Twist', 'MOX_genes'))
+
+ggplot(mox_twihead_wthead, aes(x = group, y = value)) + 
+  geom_jitter(width = 0.1) +
+  facet_grid(~condition) +
+  theme(aspect.ratio = 1) + theme_cowplot(font_size = 12) +
+  theme(panel.border = element_rect(fill = NA, color = 'black', size = 1.5)) +
+  labs(y = 'log-normalized counts', x = '')
+
+
+
+
+
+#' Nematocytes marker genes;
+Sox2 = NV2.18482
+Ncol3 = NV2.10685
+Carboxypeptidase (tbd).
+
+
+Paraxis, tbx4/5? 
+  
+  #'NOTCH like members
+  Serrate, Jagged?
+  
+  
 
 
 
