@@ -246,6 +246,16 @@ TwiHead_WTHead = merge(resdata, ortho_table[,c('NV2Id', 'TF', 'deM_TF', 'BLAST.H
           by.x = 'Gene', by.y = 'NV2Id', all.x = T)
 
 
+#' looking into MOX genes; NvMOXA-D
+MOX_genes = NV2_annotation$NV2[grep(pattern = 'NvMOX.*', NV2_annotation$gene_short_name, ignore.case = T)]
+
+
+Sox2 and Ncol3 and Carboxypeptidase (tbd).
+Mox genes are co-expressed with twist,
+Paraxis, tbx4/5? 
+
+
+
 #' refine based on p-adjust and logFC
 TwiHead_WTHead = TwiHead_WTHead[which(abs(TwiHead_WTHead$log2FoldChange) > 1 & TwiHead_WTHead$padj < 0.01),, drop = F]
 TwiHead_WTHead = TwiHead_WTHead[, -grep('^Bubble*', colnames(TwiHead_WTHead))]
