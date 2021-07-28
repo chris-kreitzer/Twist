@@ -418,19 +418,24 @@ ggplot(mox_twihead_wthead, aes(x = group, y = value)) +
   labs(y = 'log-normalized counts', x = '')
 
 
+#' T-box transcription factors
+#' Paraxis = NV2.10865	 
+#' tbx4 = NV2.16222 (T-box transcription factor TBX5-A;)
+
+Tbox_frame = as.data.frame(transformed_data[row.names(transformed_data) %in% c('NV2.10864', 'NV2.10865', 'NV2.16222'), ])
+
+
 
 
 
 #' Nematocytes marker genes;
-Sox2 = NV2.18482
-Ncol3 = NV2.10685
-Carboxypeptidase (tbd).
+# Sox2 = NV2.18482
+# Ncol3 = NV2.10685
+# Carboxypeptidase (tbd).
 
 
-Paraxis, tbx4/5? 
-  
-  #'NOTCH like members
-  Serrate, Jagged?
+#'NOTCH like members
+#' Serrate, Jagged?
   
   
 
