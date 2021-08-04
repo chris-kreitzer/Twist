@@ -234,6 +234,13 @@ ggplot(PCA_raw,
 #' fitting a generalized linear model (negative binomial model)
 DGE_bulkRNA = DESeq(bulkRNA_object_phenotype)
 
+
+
+
+
+
+
+
 #' get differential expression results;
 #' TwiHead vs WTHead
 res = results(object = DGE_bulkRNA, 
