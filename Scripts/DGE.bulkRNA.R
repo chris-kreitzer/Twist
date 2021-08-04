@@ -37,6 +37,9 @@ load('NV2_annotation')
 bulkRNA_in = read.csv(file = 'Data_out/bulkRNAcounts_featureCounts', 
                       skip = 1, 
                       sep = '\t')
+
+#' functional annotation Juan;    04/08/2021
+functional_annotation = read.csv('Data_out/tcs_v2.functional_annotation.tsv', sep = '\t')
 row.names(bulkRNA_in) = bulkRNA_in$Geneid
 bulkRNA_in = bulkRNA_in[, seq(7, ncol(bulkRNA_in), 1)]
 colnames(bulkRNA_in) = c('Bubble1', 'Bubble2', 'Bubble3', 'Twi4d_1', 'Twi4d_2', 'Twi4d_3', 'Twihead_1', 'Twihead_2', 'Twihead_3', 
@@ -230,34 +233,49 @@ ggplot(PCA_raw,
 DGE_bulkRNA = DESeq(bulkRNA_object_phenotype)
 
 #' get differential expression results;
-#' Bubble vs WT4d
-res = results(object = DGE_bulkRNA, lfcThreshold = 1, contrast = c('phenotype', 'TwiHead', 'WTHead'))
+#' TwiHead vs WTHead
+res = results(object = DGE_bulkRNA, 
+              lfcThreshold = 1, 
+              tidy = T, 
+              contrast = c('phenotype', 'TwiHead', 'WTHead'))
 
+row.names(res) = res$row
 #' Merge with normalized count data
 resdata = merge(as.data.frame(res), as.data.frame(counts(DGE_bulkRNA, normalized = TRUE)), 
                 by = "row.names", sort = TRUE)
 names(resdata)[1] = "Gene"
 
-#' make annotations for the DE genes within the groups; focus on TF and muscle development;
-ortho_table = read.csv(file = 'Data_out/NV2_orthologe.table.tsv', sep = '\t')
-ortho_table = ortho_table[!duplicated(ortho_table$NV2Id) & !is.na(ortho_table$NV2Id), ]
-
 #' one example: Twist 4d (mutant) early development vs Bubble (adult animal with mutation and phenotype)
-TwiHead_WTHead = merge(resdata, ortho_table[,c('NV2Id', 'TF', 'deM_TF', 'BLAST.Hit', 'Trinotate.Descr', 'Emapper.Annotation')],
-          by.x = 'Gene', by.y = 'NV2Id', all.x = T)
+TwiHead_WTHead = merge(resdata, functional_annotation,
+          by.x = 'Gene', by.y = 'geneID', all.x = T)
 
 
 #' refine based on p-adjust and logFC
-TwiHead_WTHead = TwiHead_WTHead[which(abs(TwiHead_WTHead$log2FoldChange) > 1 & TwiHead_WTHead$padj < 0.01),, drop = F]
+TwiHead_WTHead = TwiHead_WTHead[which(abs(TwiHead_WTHead$log2FoldChange) >= 1 & TwiHead_WTHead$padj <= 0.05),, drop = F]
 TwiHead_WTHead = TwiHead_WTHead[, -grep('^Bubble*', colnames(TwiHead_WTHead))]
 TwiHead_WTHead = TwiHead_WTHead[, -grep('WT4d*', colnames(TwiHead_WTHead))]
 TwiHead_WTHead = TwiHead_WTHead[, -grep('Twi4d*', colnames(TwiHead_WTHead))]
 
-#' add meta data to up-/down table
+
+
+#' add meta data to up-/down table| check whether I should use the annotation from the orthologous table
+#' Juan sent or any other different
 TwiHead_WTHead_full = merge(x = TwiHead_WTHead, y = NV2_annotation, 
                             by.x = 'Gene', by.y = 'NV2', all.x = T)
 write.xlsx(x = TwiHead_WTHead_full, file = 'Data_out/TwiHead_WTHead_fulltable.xlsx', row.names = F)
 # TwiHead_WTHead_full$gene_short_name[which(TwiHead_WTHead_full$log2FoldChange < 0 & !is.na(TwiHead_WTHead_full$TF))]
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -518,4 +536,5 @@ for(i in 2:length(resultsNames(DGE_bulkRNA))){
 
 
 
-
+# most recent annotation data
+#/scratch/jmontenegro/nvectensis/results/annotation/tcs_v2/tcs_v2.functional_annotation.tsv
