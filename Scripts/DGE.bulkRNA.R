@@ -31,6 +31,8 @@ library(rlist)
 library(xlsx)
 library(cowplot)
 library(forcats)
+library(openxlsx)
+
 
 ## Input and Processing
 load('NV2_annotation')
@@ -260,11 +262,29 @@ TwiHead_WTHead = TwiHead_WTHead[, -grep('Twi4d*', colnames(TwiHead_WTHead))]
 
 #' add meta data to up-/down table| check whether I should use the annotation from the orthologous table
 #' Juan sent or any other different
-TwiHead_WTHead_full = merge(x = TwiHead_WTHead, y = NV2_annotation, 
-                            by.x = 'Gene', by.y = 'NV2', all.x = T)
-write.xlsx(x = TwiHead_WTHead_full, file = 'Data_out/TwiHead_WTHead_fulltable.xlsx', row.names = F)
-# TwiHead_WTHead_full$gene_short_name[which(TwiHead_WTHead_full$log2FoldChange < 0 & !is.na(TwiHead_WTHead_full$TF))]
+TwiHead_WTHead$row = paste(TwiHead_WTHead$Preferred_name, TwiHead_WTHead$NR_Desc, sep = '/')
 
+#' filter for some specific features (pathways)
+enrichment = c('Notch.*', 'Wnt.*', 'Fgf.*', 'muscle.*')
+TwiWT = createWorkbook()
+
+for(i in unique(enrichment)){
+  data.grep = TwiHead_WTHead[grep(pattern = i, x = TwiHead_WTHead$row, ignore.case = T), ]
+  colnames(data.grep)[2] = 'name/NR_Desc'
+  data.grep = data.grep[order(data.grep$log2FoldChange, data.grep$baseMean, decreasing = T), ]
+  name = paste(substr(start = 1, stop = nchar(i) - 2, i), 'pathway', sep = '_')
+  addWorksheet(wb = TwiWT, sheetName = name)
+  writeData(TwiWT, sheet = name, x = data.grep)
+  
+}
+
+#' concentrate on TFs
+TFs = TwiHead_WTHead[!is.na(TwiHead_WTHead$TF_Fam) & !TwiHead_WTHead$TF_Fam %in% '-', ]
+colnames(TFs)[2] = 'name/NR_Desc'
+TFs = TFs[order(TFs$log2FoldChange, TFs$baseMean, decreasing = T), ]
+addWorksheet(wb = TwiWT, sheetName = 'Transcription_Factors')
+writeData(TwiWT, sheet = 'Transcription_Factors', x = TFs)
+saveWorkbook(wb = TwiWT, 'Data_out/TwiHead_WTHead_new.xlsx')
 
 
 
