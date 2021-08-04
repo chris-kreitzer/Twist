@@ -384,6 +384,13 @@ write.xlsx(x = Bubble_WTHead_full, file = 'Data_out/Bubble_WTHead_fulltable.xlsx
 
 
 
+
+
+
+
+
+
+
 ## Differential gene expression: 
 #' DESeq function consits of the following steps:
 #' estimation of size factors (controlling for differences in the sequencing depth of the samples);
@@ -483,6 +490,11 @@ Tbox_frame = as.data.frame(transformed_data[row.names(transformed_data) %in% c('
 #' Serrate, Jagged?
   
   
+
+
+
+
+
 
 
 
