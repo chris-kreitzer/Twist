@@ -529,9 +529,6 @@ ggplot(MOX_plot, aes(x = gene, y = value, color = phenotype)) +
 Tbox_frame = as.data.frame(transformed_data[row.names(transformed_data) %in% c('NV2.10864', 'NV2.10865', 'NV2.16222'), ])
 
 
-
-
-
 #' Nematocytes marker genes;
 # Sox2 = NV2.18482
 # Ncol3 = NV2.10685
