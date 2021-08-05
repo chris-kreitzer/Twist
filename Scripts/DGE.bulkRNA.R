@@ -236,11 +236,6 @@ DGE_bulkRNA = DESeq(bulkRNA_object_phenotype)
 
 
 
-
-
-
-
-
 #' get differential expression results;
 #' TwiHead vs WTHead
 res = results(object = DGE_bulkRNA, 
@@ -297,89 +292,166 @@ saveWorkbook(wb = TwiWT, 'Data_out/TwiHead_WTHead_new.xlsx')
 
 
 
-
-
-
-
-
-
-
-
-
 ##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #' comparision of Twi4d and WT4d; whether we see that twist is signigicantly different expressed;
-res = results(object = DGE_bulkRNA, lfcThreshold = 1, contrast = c('phenotype', 'Twi4d', 'WT4d'))
+res = results(object = DGE_bulkRNA, 
+              lfcThreshold = 1, 
+              tidy = T, 
+              contrast = c('phenotype', 'Twi4d', 'WT4d'))
 
+row.names(res) = res$row
 #' Merge with normalized count data
 resdata = merge(as.data.frame(res), as.data.frame(counts(DGE_bulkRNA, normalized = TRUE)), 
                 by = "row.names", sort = TRUE)
 names(resdata)[1] = "Gene"
 
-Twi4d_WT4d = merge(resdata, ortho_table[,c('NV2Id', 'TF', 'deM_TF', 'BLAST.Hit', 'Trinotate.Descr', 'Emapper.Annotation')],
-                    by.x = 'Gene', by.y = 'NV2Id', all.x = T)
+#' one example: Twist 4d (mutant) early development vs Bubble (adult animal with mutation and phenotype)
+Twi4d_WT4d = merge(resdata, functional_annotation,
+                       by.x = 'Gene', by.y = 'geneID', all.x = T)
 
-#' refine based on padjust and logFC
-Twi4d_WT4d = Twi4d_WT4d[which(abs(Twi4d_WT4d$log2FoldChange) > 1 & Twi4d_WT4d$padj < 0.01),, drop = F]
-Twi4d_WT4d = Twi4d_WT4d[, -grep('^WThead*', colnames(Twi4d_WT4d))]
+
+#' refine based on p-adjust and logFC
+Twi4d_WT4d = Twi4d_WT4d[which(abs(Twi4d_WT4d$log2FoldChange) >= 1 & Twi4d_WT4d$padj <= 0.05),, drop = F]
+Twi4d_WT4d = Twi4d_WT4d[, -grep('^Bubble*', colnames(Twi4d_WT4d))]
+Twi4d_WT4d = Twi4d_WT4d[, -grep('WThead*', colnames(Twi4d_WT4d))]
 Twi4d_WT4d = Twi4d_WT4d[, -grep('Twihead*', colnames(Twi4d_WT4d))]
-Twi4d_WT4d = Twi4d_WT4d[, -grep('Bubble*', colnames(Twi4d_WT4d))]
 
-#' add meta data to up-/down table
-Twi4d_WT4d_full = merge(x = Twi4d_WT4d, y = NV2_annotation, 
-                            by.x = 'Gene', by.y = 'NV2', all.x = T)
-write.xlsx(x = Twi4d_WT4d_full, file = 'Data_out/Twi4d_WT4d_fulltable.xlsx', row.names = F)
-#' Twi4d_WT4d_full$gene_short_name[which(Twi4d_WT4d_full$log2FoldChange > 0 & !is.na(Twi4d_WT4d_full$TF))]
+
+
+#' add meta data to up-/down table| check whether I should use the annotation from the orthologous table
+#' Juan sent or any other different
+Twi4d_WT4d$row = paste(Twi4d_WT4d$Preferred_name, Twi4d_WT4d$NR_Desc, sep = '/')
+
+#' filter for some specific features (pathways)
+enrichment = c('Notch.*', 'Wnt.*', 'Fgf.*', 'muscle.*')
+Twi4dWT4d = createWorkbook()
+
+for(i in unique(enrichment)){
+  data.grep = Twi4d_WT4d[grep(pattern = i, x = Twi4d_WT4d$row, ignore.case = T), ]
+  colnames(data.grep)[2] = 'name/NR_Desc'
+  data.grep = data.grep[order(data.grep$log2FoldChange, data.grep$baseMean, decreasing = T), ]
+  name = paste(substr(start = 1, stop = nchar(i) - 2, i), 'pathway', sep = '_')
+  addWorksheet(wb = Twi4dWT4d, sheetName = name)
+  writeData(Twi4dWT4d, sheet = name, x = data.grep)
+  
+}
+
+#' concentrate on TFs
+TFs = Twi4d_WT4d[!is.na(Twi4d_WT4d$TF_Fam) & !Twi4d_WT4d$TF_Fam %in% '-', ]
+colnames(TFs)[2] = 'name/NR_Desc'
+TFs = TFs[order(TFs$log2FoldChange, TFs$baseMean, decreasing = T), ]
+addWorksheet(wb = Twi4dWT4d, sheetName = 'Transcription_Factors')
+writeData(Twi4dWT4d, sheet = 'Transcription_Factors', x = TFs)
+saveWorkbook(wb = Twi4dWT4d, 'Data_out/Twi4d_WT4d_new.xlsx')
+
+
 
 
 ##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #' comparision of Bubble and Twihead; whether we see that twist is signigicantly different expressed;
-res = results(object = DGE_bulkRNA, lfcThreshold = 1, contrast = c('phenotype', 'Bubble', 'TwiHead'))
+res = results(object = DGE_bulkRNA, 
+              lfcThreshold = 1, 
+              tidy = T, 
+              contrast = c('phenotype', 'Bubble', 'TwiHead'))
 
+row.names(res) = res$row
 #' Merge with normalized count data
 resdata = merge(as.data.frame(res), as.data.frame(counts(DGE_bulkRNA, normalized = TRUE)), 
                 by = "row.names", sort = TRUE)
 names(resdata)[1] = "Gene"
 
-Bubble_TwiHead = merge(resdata, ortho_table[,c('NV2Id', 'TF', 'deM_TF', 'BLAST.Hit', 'Trinotate.Descr', 'Emapper.Annotation')],
-                   by.x = 'Gene', by.y = 'NV2Id', all.x = T)
+#' one example: Twist 4d (mutant) early development vs Bubble (adult animal with mutation and phenotype)
+Bubble_TwiHead = merge(resdata, functional_annotation,
+                   by.x = 'Gene', by.y = 'geneID', all.x = T)
 
-#' refine based on padjust and logFC
-Bubble_TwiHead = Bubble_TwiHead[which(abs(Bubble_TwiHead$log2FoldChange) > 1 & Bubble_TwiHead$padj < 0.01),, drop = F]
-Bubble_TwiHead = Bubble_TwiHead[, -grep('^WThead*', colnames(Bubble_TwiHead))]
-Bubble_TwiHead = Bubble_TwiHead[, -grep('Twi4d*', colnames(Bubble_TwiHead))]
+
+#' refine based on p-adjust and logFC
+Bubble_TwiHead = Bubble_TwiHead[which(abs(Bubble_TwiHead$log2FoldChange) >= 1 & Bubble_TwiHead$padj <= 0.05),, drop = F]
 Bubble_TwiHead = Bubble_TwiHead[, -grep('WT4d*', colnames(Bubble_TwiHead))]
+Bubble_TwiHead = Bubble_TwiHead[, -grep('WThead*', colnames(Bubble_TwiHead))]
+Bubble_TwiHead = Bubble_TwiHead[, -grep('Twi4d*', colnames(Bubble_TwiHead))]
 
-#' add meta data to up-/down table
-Bubble_TwiHead_full = merge(x = Bubble_TwiHead, y = NV2_annotation, 
-                        by.x = 'Gene', by.y = 'NV2', all.x = T)
-write.xlsx(x = Bubble_TwiHead_full, file = 'Data_out/Bubble_TwiHead_fulltable.xlsx', row.names = F)
-#' Bubble_TwiHead_full$gene_short_name[which(Bubble_TwiHead_full$log2FoldChange < 0 & !is.na(Bubble_TwiHead_full$TF))]
+
+
+#' add meta data to up-/down table| check whether I should use the annotation from the orthologous table
+#' Juan sent or any other different
+Bubble_TwiHead$row = paste(Bubble_TwiHead$Preferred_name, Bubble_TwiHead$NR_Desc, sep = '/')
+
+#' filter for some specific features (pathways)
+enrichment = c('Notch.*', 'Wnt.*', 'Fgf.*', 'muscle.*')
+Bubble_TwiHead_out = createWorkbook()
+
+for(i in unique(enrichment)){
+  data.grep = Bubble_TwiHead[grep(pattern = i, x = Bubble_TwiHead$row, ignore.case = T), ]
+  colnames(data.grep)[2] = 'name/NR_Desc'
+  data.grep = data.grep[order(data.grep$log2FoldChange, data.grep$baseMean, decreasing = T), ]
+  name = paste(substr(start = 1, stop = nchar(i) - 2, i), 'pathway', sep = '_')
+  addWorksheet(wb = Bubble_TwiHead_out, sheetName = name)
+  writeData(Bubble_TwiHead_out, sheet = name, x = data.grep)
+  
+}
+
+#' concentrate on TFs
+TFs = Bubble_TwiHead[!is.na(Bubble_TwiHead$TF_Fam) & !Bubble_TwiHead$TF_Fam %in% '-', ]
+colnames(TFs)[2] = 'name/NR_Desc'
+TFs = TFs[order(TFs$log2FoldChange, TFs$baseMean, decreasing = T), ]
+addWorksheet(wb = Bubble_TwiHead_out, sheetName = 'Transcription_Factors')
+writeData(Bubble_TwiHead_out, sheet = 'Transcription_Factors', x = TFs)
+saveWorkbook(wb = Bubble_TwiHead_out, 'Data_out/Bubble_TwiHead_new.xlsx')
 
 
 
 ##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #' comparision of Bubble and WThead; whether we see that twist is signigicantly different expressed;
-res = results(object = DGE_bulkRNA, lfcThreshold = 1, contrast = c('phenotype', 'Bubble', 'WTHead'))
+res = results(object = DGE_bulkRNA, 
+              lfcThreshold = 1, 
+              tidy = T, 
+              contrast = c('phenotype', 'Bubble', 'WTHead'))
+
+row.names(res) = res$row
 
 #' Merge with normalized count data
 resdata = merge(as.data.frame(res), as.data.frame(counts(DGE_bulkRNA, normalized = TRUE)), 
                 by = "row.names", sort = TRUE)
 names(resdata)[1] = "Gene"
 
-Bubble_WTHead = merge(resdata, ortho_table[,c('NV2Id', 'TF', 'deM_TF', 'BLAST.Hit', 'Trinotate.Descr', 'Emapper.Annotation')],
-                       by.x = 'Gene', by.y = 'NV2Id', all.x = T)
+#' one example: Twist 4d (mutant) early development vs Bubble (adult animal with mutation and phenotype)
+Bubble_WTHead = merge(resdata, functional_annotation,
+                       by.x = 'Gene', by.y = 'geneID', all.x = T)
 
-#' refine based on padjust and logFC
-Bubble_WTHead = Bubble_WTHead[which(abs(Bubble_WTHead$log2FoldChange) > 1 & Bubble_WTHead$padj < 0.01),, drop = F]
-Bubble_WTHead = Bubble_WTHead[, -grep('^Twihead*', colnames(Bubble_WTHead))]
-Bubble_WTHead = Bubble_WTHead[, -grep('Twi4d*', colnames(Bubble_WTHead))]
+
+#' refine based on p-adjust and logFC
+Bubble_WTHead = Bubble_WTHead[which(abs(Bubble_WTHead$log2FoldChange) >= 1 & Bubble_WTHead$padj <= 0.05),, drop = F]
 Bubble_WTHead = Bubble_WTHead[, -grep('WT4d*', colnames(Bubble_WTHead))]
+Bubble_WTHead = Bubble_WTHead[, -grep('Twihead*', colnames(Bubble_WTHead))]
+Bubble_WTHead = Bubble_WTHead[, -grep('Twi4d*', colnames(Bubble_WTHead))]
 
-#' add meta data to up-/down table
-Bubble_WTHead_full = merge(x = Bubble_WTHead, y = NV2_annotation, 
-                            by.x = 'Gene', by.y = 'NV2', all.x = T)
-write.xlsx(x = Bubble_WTHead_full, file = 'Data_out/Bubble_WTHead_fulltable.xlsx', row.names = F)
-#' Bubble_WTHead_full$gene_short_name[which(Bubble_WTHead_full$log2FoldChange < 0 & !is.na(Bubble_WTHead_full$TF))]
+#' add meta data to up-/down table| check whether I should use the annotation from the orthologous table
+#' Juan sent or any other different
+Bubble_WTHead$row = paste(Bubble_WTHead$Preferred_name, Bubble_WTHead$NR_Desc, sep = '/')
+
+#' filter for some specific features (pathways)
+enrichment = c('Notch.*', 'Wnt.*', 'Fgf.*', 'muscle.*')
+Bubble_WTHead_out = createWorkbook()
+
+for(i in unique(enrichment)){
+  data.grep = Bubble_WTHead[grep(pattern = i, x = Bubble_WTHead$row, ignore.case = T), ]
+  colnames(data.grep)[2] = 'name/NR_Desc'
+  data.grep = data.grep[order(data.grep$log2FoldChange, data.grep$baseMean, decreasing = T), ]
+  name = paste(substr(start = 1, stop = nchar(i) - 2, i), 'pathway', sep = '_')
+  addWorksheet(wb = Bubble_WTHead_out, sheetName = name)
+  writeData(Bubble_WTHead_out, sheet = name, x = data.grep)
+  
+}
+
+#' concentrate on TFs
+TFs = Bubble_WTHead[!is.na(Bubble_WTHead$TF_Fam) & !Bubble_WTHead$TF_Fam %in% '-', ]
+colnames(TFs)[2] = 'name/NR_Desc'
+TFs = TFs[order(TFs$log2FoldChange, TFs$baseMean, decreasing = T), ]
+addWorksheet(wb = Bubble_WTHead_out, sheetName = 'Transcription_Factors')
+writeData(Bubble_WTHead_out, sheet = 'Transcription_Factors', x = TFs)
+saveWorkbook(wb = Bubble_WTHead_out, 'Data_out/Bubble_WTHead_new.xlsx')
+
 
 
 
