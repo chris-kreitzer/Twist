@@ -7,7 +7,7 @@
 ## chris kreitzer
 
 
-setwd('~/Documents/GitHub/Twist/')
+setwd('~/Documents/ESB_Master/LabRotationII/Twist/')
 rm(list = ls())
 .rs.restartR()
 
@@ -259,7 +259,7 @@ TwiHead_WTHead = TwiHead_WTHead[which(abs(TwiHead_WTHead$log2FoldChange) >= 1 & 
 TwiHead_WTHead = TwiHead_WTHead[, -grep('^Bubble*', colnames(TwiHead_WTHead))]
 TwiHead_WTHead = TwiHead_WTHead[, -grep('WT4d*', colnames(TwiHead_WTHead))]
 TwiHead_WTHead = TwiHead_WTHead[, -grep('Twi4d*', colnames(TwiHead_WTHead))]
-
+write.xlsx(TwiHead_WTHead, file = 'DGE_results/Twihead_WThead.xlsx')
 
 
 #' add meta data to up-/down table| check whether I should use the annotation from the orthologous table
@@ -315,7 +315,7 @@ Twi4d_WT4d = Twi4d_WT4d[which(abs(Twi4d_WT4d$log2FoldChange) >= 1 & Twi4d_WT4d$p
 Twi4d_WT4d = Twi4d_WT4d[, -grep('^Bubble*', colnames(Twi4d_WT4d))]
 Twi4d_WT4d = Twi4d_WT4d[, -grep('WThead*', colnames(Twi4d_WT4d))]
 Twi4d_WT4d = Twi4d_WT4d[, -grep('Twihead*', colnames(Twi4d_WT4d))]
-
+write.xlsx(Twi4d_WT4d, file = 'DGE_results/Twi4d_WT4d.xlsx')
 
 
 #' add meta data to up-/down table| check whether I should use the annotation from the orthologous table
@@ -370,7 +370,7 @@ Bubble_TwiHead = Bubble_TwiHead[which(abs(Bubble_TwiHead$log2FoldChange) >= 1 & 
 Bubble_TwiHead = Bubble_TwiHead[, -grep('WT4d*', colnames(Bubble_TwiHead))]
 Bubble_TwiHead = Bubble_TwiHead[, -grep('WThead*', colnames(Bubble_TwiHead))]
 Bubble_TwiHead = Bubble_TwiHead[, -grep('Twi4d*', colnames(Bubble_TwiHead))]
-
+write.table(Bubble_TwiHead, file = 'DGE_results/Bubble_TwiHead.xlsx')
 
 
 #' add meta data to up-/down table| check whether I should use the annotation from the orthologous table
@@ -425,6 +425,8 @@ Bubble_WTHead = Bubble_WTHead[which(abs(Bubble_WTHead$log2FoldChange) >= 1 & Bub
 Bubble_WTHead = Bubble_WTHead[, -grep('WT4d*', colnames(Bubble_WTHead))]
 Bubble_WTHead = Bubble_WTHead[, -grep('Twihead*', colnames(Bubble_WTHead))]
 Bubble_WTHead = Bubble_WTHead[, -grep('Twi4d*', colnames(Bubble_WTHead))]
+write.xlsx(Bubble_WTHead, file = 'DGE_results/Bubble_WTHead.xlsx')
+
 
 #' add meta data to up-/down table| check whether I should use the annotation from the orthologous table
 #' Juan sent or any other different
